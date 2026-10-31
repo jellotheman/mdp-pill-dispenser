@@ -1,24 +1,33 @@
 # Community libraries and references
 
-## Library included in the firmware
-- pysm 0.4.0 by Piotr Gularski, MIT: https://github.com/pgularski/pysm/tree/v0.4.0
-- firmware/pysm.py contains upstream pysm/pysm.py from that tag, with an added source/licence header; library code is unchanged.
-- Copyright and permission notice: third_party/PYSM-LICENSE.txt.
-- The controller uses State, StateMachine and Event for explicit permitted transitions.
-- It is included in the repository so Wokwi needs no network or package installation.
-- Python's json/os and MicroPython's machine/time provide storage, GPIO, PWM and timing.
-- pytest 8.4.2 runs development tests; it is not installed on the ESP32.
+Firmware dependencies are installed through Arduino/Wokwi Library Manager:
 
-## Design references (not copied firmware)
-- https://github.com/shriramprasannak/ESP32-Smart-Medicine-Reminder-and-Automatic-Pill-Dispensing-System
-  Inspected ESP32_Smart_Medicine_Reminder.ino.ino and diagram.json: reminder, servo and simulated wiring example. Our controller adds authorization before motor movement.
+| Dependency | Version | Purpose / upstream |
+| --- | --- | --- |
+| AgileStateMachine | 1.0.7 | FSM transitions and entry callbacks — https://github.com/cotestatnt/AgileStateMachine/tree/1.0.7 |
+| ArduinoJson | 7.4.2 | Configuration, events and persistent snapshots — https://github.com/bblanchon/ArduinoJson/tree/v7.4.2 |
+| ESP32Servo | 3.0.9 | Simulated release servo — https://github.com/madhephaestus/ESP32Servo |
+| RTClib | 2.1.4 | Simulation DS1307 clock — https://github.com/adafruit/RTClib |
+| Adafruit BusIO | 1.17.2 | RTClib bus dependency — https://github.com/adafruit/Adafruit_BusIO |
+| ESP32 Arduino core | 3.2.0 | GPIO, Wi-Fi, HTTP, FreeRTOS and Preferences/NVS — https://github.com/espressif/arduino-esp32 |
+
+AgileStateMachine 1.0.8 as published through Library Manager failed strict ESP32 compilation
+because its header contains extra member qualifications. The code uses the unmodified 1.0.7 release.
+Native tests download the exact 1.0.7 commit (86caf5514103b9f393c041da0cbc2ce94c066de2),
+matching the release used by the board build. No permissive compiler flag or patched library is required.
+The controller owns dynamically registered transitions for this library version.
+
+The generator combines only our application source. It does not copy library internals.
+Retain the upstream libraries' licences when redistributing a firmware bundle or their source.
+
+The reference service uses FastAPI, Pydantic, Uvicorn and Python's sqlite3/json;
+development checks use pytest and httpx. Their installed dependencies are recorded by their package managers.
+
+Design references (not copied source):
 - https://github.com/Willykengineering/Automatic-Supplement-Pill-Dispenser
-  Inspected src/main.cpp: nonblocking motor progress, scheduling and browser control.
-  Its stepper carousel is not implemented by our one-servo simulation.
 - https://github.com/Shaztech/Pilldispenser
-  Inspected Arduino/PillDispenser/Check_Alerts.ino and Dispense_Rooutine.ino:
-  staged motor actions, reminders, persistent dose status and notification concepts.
-  No touchscreen, Telegram implementation or multi-tray mechanism is copied.
+- https://github.com/shriramprasannak/ESP32-Smart-Medicine-Reminder-and-Automatic-Pill-Dispensing-System
 
-This is original application logic around the included library. Teammates should
-check and retain the license for any further source code or CAD they reuse.
+The team has not adopted any reference mechanism as its agreed physical construction.
+The original MicroPython/pysm prototype and its attribution remain on legacy/micropython.
+Check actual licences before reusing third-party CAD or source.

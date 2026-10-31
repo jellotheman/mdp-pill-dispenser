@@ -10,7 +10,7 @@ There is no project-owned pysm.py to copy or explain. The earlier MicroPython im
 | PillDispenser.ino | setup/loop, buttons, indicators, RTC, NVS adapter and wiring |
 | DispenserCore.h | Schedule validation, durable state/outbox, FSM and mechanism contract |
 | HttpSync.h | Queued HTTP requests in a separate ESP32 task |
-| settings.h | Safe demonstration defaults; optional ignored settings.local.h override |
+| settings.h / settings.example.h | Configuration loader and safe defaults; ignored settings.local.h override |
 | diagram.json | Wokwi simulation circuit |
 | libraries.txt | Exact Library Manager versions |
 
@@ -86,8 +86,7 @@ Timezone is fixed to Asia/Kolkata in this prototype; the RTC must be deliberatel
 ## Connect the reference backend
 
 1. Follow integration/README.md to start the API.
-2. Copy settings.h to settings.local.h beside the sketch. Keep the override outside Git.
-   The override should contain the settings constants from the default branch of settings.h.
+2. Copy settings.example.h to settings.local.h beside the sketch. Keep the override outside Git.
 3. Set ENABLE_NETWORK=true, DEMO_TIMERS=false, the Wi-Fi details, DEVICE_ID,
    BACKEND_URL and DEVICE_TOKEN.
 4. Use the same token in the backend's MDP_DEVICE_TOKEN environment variable.

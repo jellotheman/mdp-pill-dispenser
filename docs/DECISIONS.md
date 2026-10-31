@@ -1,27 +1,41 @@
 # Shared project decisions
 
-Keep this short. Add the decision, who agreed it and when.
+## Agreed software direction
 
-## Current prototype choices
-- Five contribution folders: firmware, mechanical, electronics, app, integration.
-- Firmware: MicroPython on ESP32, with pysm for the FSM.
-- Development: browser Codespaces for Python logic and tests; online Wokwi for
-  the interactive circuit. They are separate tools, not automatically synchronized.
-- One servo gate and one compartment in the first simulation.
-- Buttons stand in for biometric matching and pill-drop detection.
-- JSON events over the serial console; SMS requests are mocked.
-- A recorded interrupted/error dispensing attempt requires inspection, not retry.
+- Five contribution folders remain: firmware, mechanical, electronics, app, integration.
+- Firmware now uses Arduino/C++, following Sreeram's preference for simpler Wokwi/library setup.
+- main is the default/current Arduino branch. The original Python prototype is preserved on legacy/micropython.
+- The repository remains private.
+- Use community libraries through package managers, with pinned firmware versions.
+- The app already exists but has not been uploaded; inspect it before adapting UI/backend integration.
+- Firmware and integration share schema version 2.
+- HTTP is implemented as the initial device transport; the existing app/backend may replace the reference service.
+- Real SMS delivery remains an integration task. The reference service records deduplicated mock notifications.
+- A stored interrupted attempt requires inspection; no automatic release retry.
+
+## Provisional simulation choices, not team-approved physical construction
+
+- Six virtual compartments, one preloaded item each.
+- Timed virtual homing and indexing; one servo visualizes release.
+- Buttons simulate user matching and passage detection.
+- The simulated user is template/user ID 1.
+- Used compartments remain spent. Simulation reset is an explicit local command.
+- Asia/Kolkata local daily schedules, fixed timezone, two-minute daily approval window.
+- Physical mode deliberately refuses operation until a real mechanism is implemented.
 
 ## Team decisions still needed
-| Question | Members who should agree | Decision |
-| --- | --- | --- |
-| Final tray/gate mechanism and compartment count | mechanical + electronics + firmware | pending |
-| Motor, driver, homing and position feedback | mechanical + electronics + firmware | pending |
-| Fingerprint module and enrolment method | electronics + firmware | pending |
-| Pill sensor and physical lock | mechanical + electronics + firmware | pending |
-| RTC and power arrangement | electronics + firmware | pending |
-| App framework and backend framework | app + integration | pending |
-| Serial/HTTP/MQTT transport and schedule sync | integration + firmware + app | pending |
-| Real SMS transport | electronics + integration | pending |
 
-Do not silently treat a simulated part as the final hardware choice.
+| Decision | Members |
+| --- | --- |
+| Preloaded versus bulk dispensing; actual number of compartments | mechanical + electronics + firmware |
+| Motor, driver, homing, position feedback, release and stop sequence | mechanical + electronics + firmware |
+| Passage sensor, placement, pulse characteristics and success criteria | mechanical + electronics + firmware |
+| Fingerprint reader, template ownership and enrolment | electronics + firmware |
+| Physical lock, power, RTC and reviewed wiring | mechanical + electronics + firmware |
+| Physical refill, fault recovery and long-term storage policy | mechanical + electronics + firmware |
+| Existing app architecture, backend reuse and API adapter | app + integration + firmware |
+| Development endpoint, HTTPS CA/time provisioning and device credentials | integration + firmware |
+| Real SMS provider/module and delivery tracking | integration + electronics |
+
+Record the actual decision, who agreed it, and when.
+Use MECHANISM_BRIEF.md as the physical design handoff.

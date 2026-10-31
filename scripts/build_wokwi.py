@@ -10,7 +10,7 @@ source = root / "firmware" / "PillDispenser"
 out = root / "output" / "wokwi"
 out.mkdir(parents=True, exist_ok=True)
 pieces = []
-for name in ("settings.h", "DispenserCore.h", "HttpSync.h", "PillDispenser.ino"):
+for name in ("settings.example.h", "DispenserCore.h", "HttpSync.h", "PillDispenser.ino"):
     text = (source / name).read_text(encoding="utf-8")
     text = "\n".join(line for line in text.splitlines()
                      if line.strip() not in ('#pragma once', '#include "settings.h"',

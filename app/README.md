@@ -1,32 +1,25 @@
 # Companion app
 
-This folder is reserved for the app member's contribution; no app has been
-implemented by the firmware work.
+The existing application is ready for source upload but has not yet been inspected.
+Put source, dependency manifests and exact setup/start instructions here.
+Keep node_modules, build caches, credentials and private data outside Git.
 
-Read [the team guide](../docs/TEAM_GUIDE.md) for uploading and collaboration steps,
-and [the shared interface](../integration/INTERFACE.md) before choosing data fields.
+Read docs/TEAM_GUIDE.md for beginner upload/branch instructions.
+Read integration/INTERFACE.md for schema version 2.
+The reference backend is integration/service.py; reuse the existing app's backend if appropriate
+instead of creating a second incompatible data store.
 
-## First milestone
-Build a small working web/mobile interface with:
-- add/edit/enable medication schedules;
-- dispensing history using due, dispensed, missed and error states;
-- clearly labelled mock data while integration is in progress.
+## Integration checklist after upload
 
-Use an established framework you can run and explain. Agree the choice with the
-integration member. Avoid adding accounts, cloud services or unnecessary screens
-for this milestone.
+- Identify framework, existing backend, data models, routes and current mock data.
+- Preserve useful UI; adapt its service/data layer based on actual source.
+- Map medication names/instructions to stable device schedule IDs.
+- Send expected_revision when saving changes and handle 409 edit conflicts.
+- Distinguish saved desired revision from applied device revision.
+- Fetch actual dispensed/missed/error history.
+- Display queued/delivered SMS truthfully once real delivery exists.
+- Do not expose a control that bypasses local due-dose and matching-user checks.
+- Do not call a dispensed event proof of ingestion.
 
-## Upload
-Include actual source files, framework dependency files and a README with:
-1. framework and required runtime;
-2. exact installation/start commands;
-3. implemented screens;
-4. what is mock and what reaches the backend;
-5. outstanding API questions.
-
-Do not upload node_modules, build caches, credentials or virtual environments.
-Use a branch/PR if your setup needs to change shared root configuration.
-
-Do not label a dispensed event as medication taken. The prototype has no evidence
-of ingestion. Changing a schedule in an app mock is not evidence the ESP32
-received it; show synchronization separately when the transport is connected.
+The device currently supports daily Asia/Kolkata schedules and six simulated preloaded-item slots.
+Bulk quantities, recurrence by weekday, arbitrary timezones and physical refill need explicit decisions.

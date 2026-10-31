@@ -1,32 +1,70 @@
 # Communication and integration
 
-This folder is reserved for the integration member. The firmware emits JSON
-events; it does not yet send them over Wi-Fi or call a live backend.
+A working FastAPI/SQLite reference backend is provided here. Own and extend it, or adapt
+the existing app's backend to integration/INTERFACE.md after inspecting its actual source.
 
-Read [the team guide](../docs/TEAM_GUIDE.md) and [INTERFACE.md](INTERFACE.md).
+## Start locally
 
-## First milestone
-- Implement a small backend/service using an appropriate community framework
-  such as FastAPI if choosing Python.
-- Accept schedules from the app and store dispensing-history entries.
-- Replay the sample JSONL events into your service to demonstrate the contract.
-- Print mock SMS requests; do not claim real messages were delivered.
-- Document the exact setup/start command and provide example requests.
+From the repository root:
 
-Choose the framework with the app member. A local SQLite database is enough for
-the initial prototype if you need persistence. No cloud deployment is required.
+~~~sh
+python -m pip install -r requirements-dev.txt
+~~~
 
-Get sample events by running python scripts/demo.py from the repository root.
-The generated output/demo-events.jsonl is ignored by Git. CI uploads it as an
-artifact if its test/demo run completes.
+Set a development token, then start the service.
 
-## Coordinate before connecting the real device
-Decide with Sreeram whether to use serial, HTTP or MQTT, how to sync schedules and
-how to identify duplicate/replayed events. The current controller has only one
-demo compartment. Do not add remote dispense commands that bypass its local
-authorization and due-dose checks.
+Windows PowerShell:
 
-## Upload
-Put your service source, dependency file, example replay client and setup README
-here. Include .env.example with placeholders if needed; never upload actual keys.
-Update INTERFACE.md through a branch/PR when changing agreed fields.
+~~~powershell
+$env:MDP_DEVICE_TOKEN = "choose-a-local-demo-token"
+python -m uvicorn integration.service:create_app --factory --host 127.0.0.1 --port 8000
+~~~
+
+Linux/macOS:
+
+~~~sh
+export MDP_DEVICE_TOKEN='choose-a-local-demo-token'
+python -m uvicorn integration.service:create_app --factory --host 127.0.0.1 --port 8000
+~~~
+
+Open http://127.0.0.1:8000/docs for the interactive API documentation.
+All device/app endpoints require the Authorization header documented in INTERFACE.md.
+The default SQLite file is output/integration.sqlite3. Set MDP_DB to choose another path.
+Use one worker for this small development setup.
+
+To connect a physical ESP32 over the LAN, bind to 0.0.0.0 and use the computer's LAN address.
+Keep the service token configured on both ends.
+An internet-hosted/Wokwi test requires a reachable endpoint and appropriate HTTPS configuration.
+A service on localhost is not automatically reachable from browser Wokwi.
+
+## Demonstrate without hardware
+
+~~~sh
+python scripts/check_native.py --events
+python scripts/http_demo.py
+~~~
+
+The first command executes the actual C++ controller and saves its critical events.
+The second starts a temporary backend, uses real loopback HTTP to save/fetch config,
+sends an explicitly simulated applied acknowledgement, replays those C++ events twice,
+and checks that history contains one outcome.
+
+This proves the API/replay path. It does not execute the sketch's ESP32 HTTP task.
+Use the Wokwi/physical network configuration in firmware/README.md to check that separate path.
+
+## Responsibilities now
+
+- Connect the supplied app to saved/applied status and actual device history.
+- Preserve expected-revision editing and event idempotency.
+- Confirm how medication names/instructions map to stable schedule IDs.
+- Test real device/Wokwi networking and offline reconnect.
+- Add real SMS delivery, provider IDs, failure handling and deduplication.
+- Decide device provisioning and deployment after the existing app is inspected.
+
+Notifications currently say simulated and never contact a provider.
+The API is a development reference with one shared bearer token, not a completed account system.
+
+## Uploading changes
+
+Keep service code, dependencies, startup instructions and .env.example placeholders here.
+Never commit real tokens. Use a branch/PR for changes to shared contract fields.

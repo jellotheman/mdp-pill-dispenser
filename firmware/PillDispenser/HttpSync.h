@@ -68,7 +68,11 @@ class HttpSync {
     if (!strlen(BACKEND_URL) || !strlen(DEVICE_TOKEN)) return false;
     jobs_ = xQueueCreate(1, sizeof(Job));
     replies_ = xQueueCreate(1, sizeof(Reply));
-    return jobs_ && replies_ && xTaskCreate(worker, "mdp-http", 8192, this, 1, nullptr) == pdPASS;
+    if (jobs_ && replies_ && xTaskCreate(worker, "mdp-http", 8192, this, 1, nullptr) == pdPASS) return true;
+    if (jobs_) vQueueDelete(jobs_);
+    if (replies_) vQueueDelete(replies_);
+    jobs_ = replies_ = nullptr;
+    return false;
   }
 
   void pump(mdp::Controller& controller, uint64_t now) {
@@ -94,7 +98,7 @@ class HttpSync {
         } else retryAt_ = now + 2000;
       }
     }
-    if (inFlight_ || now < retryAt_ || controller.phase == mdp::Phase::Error && !controller.store.healthy)
+    if (inFlight_ || now < retryAt_ || (controller.phase == mdp::Phase::Error && !controller.store.healthy))
       return;
     static Job job;
     job.body[0] = job.eventId[0] = 0;

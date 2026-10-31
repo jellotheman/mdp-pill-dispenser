@@ -23,7 +23,7 @@ Store commits one versioned JSON snapshot through a Persistence adapter.
 On ESP32, Preferences writes that snapshot to one NVS key and reads it back for verification.
 The native tests use an in-memory persistence port with failures injected.
 
-The snapshot includes desired/applied local config, occurrence statuses, compartment statuses,
+The snapshot includes applied local config, occurrence statuses, compartment statuses,
 a latched fault and pending critical events. Before the first movement, the attempt and authorized
 event are persisted together and the selected compartment is quarantined.
 On successful verification the compartment becomes spent.

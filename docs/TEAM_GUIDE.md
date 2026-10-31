@@ -43,7 +43,7 @@ The assistant has not invited anyone. The owner's steps above are instructions.
 
 | Your job | Your folder | Typical files |
 | --- | --- | --- |
-| esp32 firmware & simulation | firmware/ | main.py, pysm.py, diagram.json |
+| esp32 firmware & simulation | firmware/ | PillDispenser.ino, controller headers, diagram.json |
 | mechanical design | mechanical/ | editable CAD, STL/STEP exports, renders |
 | electronics & hardware | electronics/ | wiring diagrams, BOM, power notes |
 | companion app | app/ | app source code and its setup instructions |
@@ -144,149 +144,160 @@ or making a larger change that another member should review.
 If GitHub says there is a conflict, stop and tell Sreeram which file is affected.
 Do not fix it by deleting the other person's work.
 
-## 6. Write and run software in Codespaces
+## 6. Write and run software locally or in Codespaces
 
-A Codespace is a development computer opened in your browser. It lets you run
-Python and use a terminal without installing tools on your own computer.
+main is the current Arduino/C++ implementation.
+The original MicroPython prototype is preserved on legacy/micropython.
+Most teammates can continue using browser uploads and do not need either compiler.
 
-1. Open the repository.
-2. Choose **Code → Codespaces → Create codespace on main**.
-3. Wait for the editor and automatic setup to finish.
-4. The Explorer on the left shows the project folders.
-5. Open **Terminal → New Terminal** if the terminal is hidden.
-6. Run firmware tests with **python -m pytest -q**.
-7. Run the automatic firmware demo with **python scripts/demo.py**.
-8. Use **python scripts/demo.py --interactive** for a manual terminal demo.
-9. Make changes in your own folder.
-10. Before finishing, use Source Control to inspect the changed files, stage only
-    your contribution, enter a commit message and commit.
-11. Use **Sync Changes** or **Push** to send the commit to GitHub.
+### Local Codex app
 
-Saving a file in the editor and pushing a commit are different actions. A file
-saved only in your Codespace is not yet available to the rest of the team on main.
+1. Open your existing cloned repository as the project folder.
+2. Ask Codex to read docs/CODEX_HANDOFF.md.
+3. Check Source Control or run git status before updating.
+4. Commit your changes to a personal branch if you already have local work.
+   Do not discard files to make a pull succeed.
+5. Fetch updates, switch to main when the worktree is safe, and pull with --ff-only.
+6. Open firmware/PillDispenser/PillDispenser.ino to work on board setup.
+7. DispenserCore.h contains the shared controller; HttpSync.h contains the network worker.
+8. Use Arduino IDE or Arduino CLI for the board build.
+9. Run the checks in firmware/README.md before pushing changes.
 
-Stop the Codespace from the Codespaces menu when finished. Closing a browser tab
-does not necessarily stop it immediately. Codespaces uses the allowance and
-billing settings of the account creating it. Each member can choose browser
-uploads instead when they only need to submit files.
+A safe update when the working tree is clean:
 
-Our configuration sets up firmware Python tools only. The app member may need
-additional tools once their framework is chosen; agree them before changing
-shared configuration.
+~~~sh
+git fetch origin
+git switch main
+git pull --ff-only origin main
+~~~
+
+If Git reports local changes or divergence, ask Codex to inspect the differences and preserve
+both versions. Do not use reset --hard or force push to resolve routine collaboration issues.
+
+### Codespaces
+
+1. Open Code → Codespaces → Create codespace on main.
+2. Wait for the editor and setup to complete.
+3. Open Terminal → New Terminal.
+4. Run python scripts/check_native.py --events for the C++ workflow checks.
+5. Run python -m pytest -q for the reference API checks.
+6. Run python scripts/http_demo.py for actual loopback HTTP replay.
+7. Run python scripts/build_wokwi.py for the files to paste into Wokwi.
+8. Follow firmware/README.md for the actual ESP32 compile.
+
+The native check needs a C++17 compiler and downloads pinned dependencies the first time.
+It does not upload to a board. Python is still used for development scripts and the reference service;
+the ESP32 firmware is C++.
+
+Save, commit and push are separate actions. A file saved only in your Codespace or on your computer
+has not yet reached the team. Inspect and stage only the files you intended to change.
+Stop your Codespace when finished.
+
+### Wokwi
+
+1. Use the Arduino ESP32 template, with sketch.ino.
+2. Paste the generated output/wokwi/sketch.ino and diagram.json.
+3. Install the exact libraries in output/wokwi/libraries.txt through Library Manager.
+4. Run the simulation and follow firmware/README.md.
+5. Copy deliberate source changes back to the repository; Wokwi does not synchronize them automatically.
+
+Do not edit the generated sketch as the only copy of your work.
+Change the canonical source under firmware/PillDispenser/ and regenerate it.
 
 ## 7. What each person should contribute
 
 ### esp32 firmware & simulation — Sreeram
 
-Submit:
-- MicroPython code for the schedule, authorization and dispensing state machine.
-- A Wokwi circuit and instructions showing the complete simulated cycle.
-- Examples of invalid authentication, missed dose and failed dispensing.
-- JSON output that the integration member can parse.
-- Tests and a short note distinguishing simulation from completed hardware.
+Current contribution:
+- Arduino/C++ FSM, scheduling, matching-user authorization and mechanism stages.
+- Persistent occurrence/inventory records and event outbox.
+- Versioned schedule download/acknowledgement and HTTP transport.
+- Wokwi circuit, generated single-file sketch and behavioral checks.
 
-Coordinate with electronics on pins, modules and electrical interfaces.
-Coordinate with mechanical design on what one motor command physically means.
-Coordinate with integration on schedule fields and event meanings.
+Next work:
+- Implement real motor, position, passage and fingerprint adapters after component selection.
+- Measure timing and observe physical feedback.
+- Coordinate shared data changes with app and integration.
+- Do not use physical mode as a shortcut to enable unreviewed hardware.
 
 ### mechanical design
 
 Submit:
-- A preliminary editable 3D model of the tray/compartments, dispensing path,
-  motor mount and outer enclosure.
-- STL files for printed parts and STEP exports where the tool supports them.
-- Two or three renders/screenshots showing the outside and internal arrangement.
-- Key dimensions, motor assumptions and assembly notes.
-- A short description or animation explaining how a dose leaves the compartment.
+- Editable compartment/tray, release path, motor mount and enclosure CAD.
+- STL/STEP exports where supported.
+- Outside/inside/mechanism renders and dimensions.
+- A short explanation or video of how one intended dose is released.
+- Answers to docs/MECHANISM_BRIEF.md.
 
-Coordinate with electronics before placing boards, connectors or power hardware.
-Ask for actual component dimensions and leave space for wires and service access.
-Coordinate with Sreeram before choosing a stepper carousel, servo gate or a
-different mechanism. The current firmware servo is a demonstration adapter.
-
-Do not label a CAD-only mechanism as physically tested. Identify dimensions that
-still depend on component selection.
+Coordinate with electronics on actual sizes, power hardware, connectors and wire clearance.
+Coordinate with firmware on homing, position numbering, release and safe stop.
+The six virtual slots are provisional, not an agreed final mechanism.
 
 ### electronics & hardware
 
 Submit:
-- A component list with part/model names, quantities and approximate costs.
-- A circuit/wiring diagram with power and ground connections.
-- A reviewed GPIO table, replacing the provisional map after agreement.
-- A power plan: supply voltage/current, motor supply, common ground and any driver
-  or level conversion needed.
-- The expected fingerprint interface and motor control interface.
+- Exact component/model list with quantities and expected supply requirements.
+- Editable circuit plus a labelled wiring/power diagram.
+- A reviewed GPIO map; the existing map is only a simulation example.
+- Fingerprint interface, position sensor and passage sensor specifications.
+- Sensor polarity/pulse timing and motor-driver control details.
 
-Coordinate with mechanical design on dimensions, mounting and connector access.
-Coordinate with Sreeram before changing pins or module types.
-Coordinate with integration on whether notifications will use Wi-Fi or a GSM
-module. Do not purchase a module solely because a reference project used it.
-
-The Wokwi circuit is a simulation aid, not an approved physical wiring plan.
+Coordinate dimensions/mounting with mechanical design and interfaces with firmware.
+A generic module name is insufficient when different variants use different logic levels.
+The physical passage driver must be designed from the signal; the button debounce is not its driver.
 
 ### companion app
 
-Submit:
-- Source code for a small working interface, not screenshots alone.
-- A screen to add/edit/enable medication schedules.
-- A dispensing-history screen with due, dispensed, missed and error states.
-- A README describing the framework and exact start command.
-- A clear label when the app is showing mock data.
+The app already exists; upload its actual source and dependency files into app/.
+Submit a README with the exact installation/start commands and which screens use mock data.
+Do not upload node_modules, credentials or build caches.
 
-Coordinate with integration on the API and the fields in integration/INTERFACE.md.
-Use mock responses while the backend is being built. Do not independently invent
-a second incompatible schedule format.
-
-Do not label a dose as taken when the only evidence is that the dispenser
-released it. The first version does not need accounts or a cloud service.
+With integration:
+- Map medication records to stable schedule IDs.
+- Show saved and applied-to-device as different statuses.
+- Display actual dispensed/missed/error history after API connection.
+- Preserve the UI where possible; replace/adapt the data layer after inspecting the existing code.
+- Do not describe a dispensed event as proof the person took medication.
 
 ### communication & integration
 
-Submit:
-- A small backend/service or agreed device transport, with a start command.
-- A way to receive schedules from the app and expose dispensing history.
-- A replay script that feeds the firmware's sample JSON events into your service.
-- Mock SMS behaviour that clearly says no real SMS was sent.
-- An example showing one schedule and one resulting history entry.
+A reference service now exists in integration/service.py.
+Read integration/README.md and INTERFACE.md before replacing or extending it.
 
-Coordinate with the app member on request/response shapes and with Sreeram on
-firmware events. Start with replayed JSON so no one is blocked by Wokwi networking.
+Own:
+- The existing app's connection to the service or a compatible backend.
+- Versioned schedule editing and device applied acknowledgements.
+- Event acceptance, replay handling and duplicate suppression.
+- Development deployment/device connectivity.
+- Real SMS provider integration, delivery status and deduplication.
 
-The initial firmware emits events over the serial console. It does not include
-a live HTTP/MQTT connection. Choose the transport together and update the
-interface document before building that connection.
-
-A queued SMS request is not proof of SMS delivery. Handle delivery separately
-when real messaging is added.
+Start with the actual HTTP replay commands; then test the separate ESP32/Wokwi network path.
+The generated C++ events already exercise the shared contract.
+The reference service's SMS records are explicitly simulated.
 
 ## 8. Keep each folder's README useful
 
-After a contribution, answer:
-1. What files did you add?
-2. How does someone open or run them?
-3. What works already?
-4. What is still a draft or simulation?
-5. What do you need from another member?
-
-Five clear answers are more useful than several pages of copied background.
+After uploading, answer:
+1. What did you add?
+2. How does someone open or run it?
+3. What has been demonstrated?
+4. What remains simulated, provisional or untested?
+5. What exact information do you need from another teammate?
 
 ## 9. Rules that prevent avoidable problems
 
-- Work mainly in your own folder.
-- Discuss interface, dimension and pin changes before committing them.
-- Check the latest main before editing a shared file.
-- Use a branch/PR for changes that affect someone else's work.
-- Include editable originals and any useful previews.
-- Do not upload passwords, API keys, Wi-Fi credentials or real patient data.
-- Do not upload node_modules, virtual environments, temporary build outputs,
-  copied download caches or unrelated personal files.
-- Keep licences/attribution for reused code or CAD.
-- Use a short commit message that explains the change.
-- Mention blockers early, with a concrete question.
+- Work mainly in your folder; use a branch/PR for shared changes.
+- Discuss contract, dimension and pin changes before merging.
+- Preserve local work before pulling; never fix a conflict by deleting someone else's contribution.
+- Upload editable originals with useful exports/previews.
+- Do not commit tokens, Wi-Fi passwords, patient data or biometric templates.
+- Use the ignored settings.local.h for local board settings; generated Wokwi output uses safe defaults.
+- Retain licences/attribution for reused source or CAD.
+- Mention a blocker early with a concrete question.
 
 ## 10. Before the milestone review
 
-Each person should be able to open their folder and demonstrate their contribution.
-Show the simulation, CAD, wiring plan, app or service actually working where
-possible. Say what is connected today and what is still mocked. Keep one short
-list of decisions the team must make next in docs/DECISIONS.md.
+Each person should demonstrate their own contribution from the shared repository.
+Show software, CAD and wiring actually opening/running where possible.
+State which interfaces are connected and which physical features are still pending.
+Use docs/DECISIONS.md for decisions and docs/VALIDATION.md for test evidence.

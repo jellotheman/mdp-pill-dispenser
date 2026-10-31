@@ -1,38 +1,51 @@
-# First milestone demonstration
+# Demonstration checklist
 
-## 1. Show the shared workspace
-Open the repository and show the five contribution folders. Open the team guide
-so reviewers can see responsibilities and coordination.
+## Native workflow and real HTTP replay
 
-## 2. Show firmware tests and terminal behaviour
-In Codespaces run python -m pytest -q, then python scripts/demo.py.
+From the repository root:
 
-The automatic demonstration asserts:
-- failed authentication causes no motor start;
-- valid authentication plus fresh drop detection completes one dispense;
-- offering the same occurrence again is rejected;
-- a missed authentication window produces a missed event and mock SMS request;
-- no drop confirmation produces ERROR without another motor attempt.
+~~~sh
+python -m pip install -r requirements-dev.txt
+python scripts/check_native.py --events
+python -m pytest -q
+python scripts/http_demo.py
+python scripts/build_wokwi.py
+~~~
 
-The terminal script uses virtual time and fake hardware. A passing run demonstrates
-controller behaviour, not the actual ESP32, physical reliability or real messaging.
+The native runner checks the actual shared C++ controller and pinned community libraries.
+The HTTP replay starts a temporary API and proves message acceptance/idempotency.
+Neither command emulates the ESP32 processor or physical mechanism.
 
-## 3. Show Wokwi
-Follow firmware/README.md. Demonstrate one successful dose, one missed dose and
-one missing-drop failure. Show the servo, reminder LEDs/buzzer and serial events.
-Say explicitly that fingerprint and drop sensors are simulated by buttons.
+## Wokwi
 
-## 4. Show each teammate's current contribution
-Mechanical: editable CAD and how the mechanism should work.
-Electronics: components, wiring, power and provisional/agreed pins.
-App: working screens and whether data is mock.
-Integration: service/replayed events and mock notification behaviour.
+Follow firmware/README.md to paste the generated sketch and circuit into an Arduino ESP32 project.
+Install the libraries listed in libraries.txt; no custom library upload is required.
 
-Do not present placeholder READMEs as completed work.
+Demonstrate:
+1. Incorrect matching leaves the mechanism unauthorized.
+2. Correct matching causes virtual homing/indexing, then visible servo release.
+3. One blue passage during release/verification produces dispensed.
+4. No matching produces missed.
+5. Authorization without a passage produces ERROR and no retry.
+6. A blue input held before release prevents opening.
+7. Used compartments remain spent after the occurrence completes.
 
-## 5. Explain what remains
-Agree the real mechanism and components; implement actual sensor/motor/lock
-drivers; connect the app transport; validate physical operation and notification
-delivery. Use test pills or inert objects for prototype demonstrations.
+The default timer demonstration has events at 5, 35 and 65 seconds.
+Use erase-demo only for disposable simulation data when repeating the demonstration.
 
-No software history entry proves medication was swallowed.
+## Optional connected demonstration
+
+Start the reference service and configure a reachable backend in the sketch.
+Disable DEMO_TIMERS and enable networking.
+Save a future daily schedule through the service, observe applied_revision,
+then complete a Wokwi cycle and fetch its history.
+
+This connected ESP32 path must be run and observed separately; compilation and HTTP replay do not prove it.
+The existing app is still awaiting source upload, so there is no claim that its UI is integrated.
+
+## Explain accurately
+
+Homing/indexing and both sensors remain simulations.
+The reference service creates mock SMS records, not real SMS delivery.
+A passage does not prove medication ingestion.
+The physical profile remains blocked pending construction-specific drivers.

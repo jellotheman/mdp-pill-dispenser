@@ -1,16 +1,15 @@
 {
-  "name": "MDP Pill Dispenser",
+  "name": "MDP Arduino firmware and integration",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
-  "postCreateCommand": "python -m pip install -r requirements-dev.txt",
+  "postCreateCommand": "bash scripts/setup_codespace.sh",
   "customizations": {
     "vscode": {
       "extensions": [
+        "ms-vscode.cpptools",
         "ms-python.python"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
         "python.testing.pytestEnabled": true,
-        "python.testing.unittestEnabled": false,
         "python.testing.pytestArgs": [
           "tests"
         ]

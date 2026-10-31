@@ -2,9 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run firmware tests",
+      "label": "Check C++ firmware workflow",
       "type": "shell",
-      "command": "python -m pytest -q",
+      "command": "python scripts/check_native.py --events",
       "group": {
         "kind": "test",
         "isDefault": true
@@ -12,15 +12,21 @@
       "problemMatcher": []
     },
     {
-      "label": "Run dispenser demo",
+      "label": "Check reference API",
       "type": "shell",
-      "command": "python scripts/demo.py",
+      "command": "python -m pytest -q",
       "problemMatcher": []
     },
     {
-      "label": "Open interactive dispenser",
+      "label": "Run real HTTP replay",
       "type": "shell",
-      "command": "python scripts/demo.py --interactive",
+      "command": "python scripts/http_demo.py",
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate Wokwi Arduino sketch",
+      "type": "shell",
+      "command": "python scripts/build_wokwi.py",
       "problemMatcher": []
     }
   ]

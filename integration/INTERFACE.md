@@ -1,60 +1,122 @@
-# Draft shared interface
+# App/device contract — version 2
 
-This is a starting agreement for app, integration and firmware. It describes
-data, not an implemented network API. Confirm changes together.
+Implemented by the Arduino firmware and reference service.
+This supersedes the original draft version-1 serial-only format.
+The existing app has not been inspected; adapt its service layer to this contract or agree a revision.
 
-## Schedule
+## Conventions
 
-```json
-{"id":"morning","time":"08:00","compartment":1,"enabled":true}
-```
+- API prefix: /api/v1/devices/{device_id}. API route version and event schema version are different.
+- Identifiers: 1–32 ASCII letters/numbers, hyphen or underscore.
+- Development service authentication: Authorization: Bearer TOKEN.
+- No remote command directly operates the mechanism or impersonates a fingerprint.
+- Device profile currently supports six compartments, each containing one preloaded item.
+- This contract does not represent bulk pill counting, arbitrary quantities, weekdays or multiple timezones.
 
-- id: unique, nonempty schedule id, retained when editing its time.
-- time: daily local HH:MM, 24-hour format.
-- compartment: 1 in the current simulation. More compartments need the real
-  indexing mechanism and a coordinated firmware change.
-- enabled: boolean.
-- Local time zone for deployment is India (Asia/Kolkata). The physical RTC must
-  be deliberately set to local time; it cannot infer a time zone.
-- The controller's date-qualified occurrence id is separate from the schedule id,
-  e.g. 2026-10-31:morning. This prototype supports one occurrence per schedule per
-  date. Do not reuse an id for an additional dose on that date.
+## Save and synchronize schedules
 
-The firmware currently reads SCHEDULES in main.py. Network schedule upload,
-validation acknowledgement and persistence are future integration work.
+App:
+PUT /api/v1/devices/mdp-demo/config
 
-## Device event (one JSON object per serial line)
+~~~json
+{"expected_revision":0,"timezone":"Asia/Kolkata","schedules":[{"id":"morning","time":"08:00","compartment":1,"enabled":true,"auth_user_id":1}]}
+~~~
 
-```json
-{"schema_version":1,"event":"dispensed","state":"COMPLETED","elapsed_ms":800,
- "dose_id":"2026-10-31:morning","schedule_id":"morning","compartment":1,
- "reason":"drop_detected"}
-```
+The service returns a new config:
 
-The short timer demonstration uses demo-1, demo-2 and demo-3 instead of dated ids.
+~~~json
+{"revision":1,"timezone":"Asia/Kolkata","schedules":[{"id":"morning","time":"08:00","compartment":1,"enabled":true,"auth_user_id":1}]}
+~~~
 
-Events include dose_due, reminder, authentication_failed, authorized,
-motor_started, verifying, pill_detected, dispensed, missed, error and sms_requested.
+A conflicting expected_revision returns 409. Fetch the current config before resolving the edit.
+Fields are explicit and extra fields are rejected; do not silently drop medication data from the app.
+App-only names/instructions may remain in the app/backend and map to stable schedule IDs.
 
-- elapsed_ms is accumulated time since boot, not a calendar timestamp.
-- Some startup errors have dose_id null and no schedule_id/compartment.
-- Human-readable startup lines are also printed. An integration reader should
-  parse lines beginning with a JSON object and skip other text.
-- sms_requested has simulated=true. It means a mock notification request, not
-  proof of delivery.
-- dispensed means the simulated drop was detected after an authorized attempt.
-  It does not mean the medicine was taken.
-- error is latched; it does not request another dispense attempt.
+Device:
+GET /api/v1/devices/mdp-demo/config
 
-The service should add received_at in an explicit time zone and identify the
-device/session when real transport is introduced. Duplicate handling for history,
-replayed reminder events, ordering and real SMS delivery must be agreed at that
-stage. Do not turn each replayed notification event into another real SMS.
+The device validates the schema and revision. It persists a new config while IDLE.
+A busy device defers it. An older revision or changed content under the same revision is rejected.
+Same revision and same content is idempotent.
+A config cannot unlock an ERROR device.
 
-## Suggested service operations, to be agreed
+Device:
+POST /api/v1/devices/mdp-demo/config-acks
 
-The backend may expose schedule listing/updating and history listing to the app,
-plus an event-ingestion operation for the device/replay script. These are proposed
-responsibilities, not working endpoints in the repository yet.
+~~~json
+{"revision":1,"status":"applied","reason":"applied"}
+~~~
 
-Do not expose a bypass that operates the motor directly from the app.
+Other statuses are deferred and rejected. The service accepts only known revisions.
+GET /api/v1/devices/mdp-demo/status returns desired_revision, applied_revision and synchronized.
+The app must distinguish saved-to-service from applied-to-device.
+
+The firmware retains its applied config during network loss.
+Changing configuration does not refill a physical slot or reset occurrence history.
+
+## Dose identity and ownership
+
+schedule ID: morning
+occurrence ID: 2026-10-31:morning
+compartment: 1
+auth_user_id: 1
+
+The occurrence ID stays the same for that schedule/date after configuration edits.
+Use a distinct schedule ID for a genuinely separate daily occurrence.
+The template/user ID is the sensor's matching identity, not a fingerprint template or image.
+Do not send biometric templates through this API.
+
+## Critical events and acknowledgements
+
+Device:
+POST /api/v1/devices/mdp-demo/events
+
+~~~json
+{"schema_version":2,"event_id":"mdp-demo:0123456789abcdef:7","device_id":"mdp-demo","session_id":"0123456789abcdef","event":"dispensed","state":"COMPLETED","elapsed_ms":6000,"occurred_at":null,"dose_id":"2026-10-31:morning","schedule_id":"morning","compartment":1,"revision":1,"reason":"one_passage_observed","observed_count":1,"simulated":true}
+~~~
+
+Response:
+
+~~~json
+{"accepted":true,"duplicate":false,"event_id":"mdp-demo:0123456789abcdef:7"}
+~~~
+
+An identical replay receives accepted=true and duplicate=true without another record.
+Reusing an event ID with different content returns 409.
+The firmware removes a pending event only after receiving the same acknowledged ID.
+
+Durable events: dose_due, authorized, dispensed, missed, error.
+Serial-only diagnostics: reminders, rejected matching, stage progress and simulated passages.
+The service deliberately accepts the durable subset. Do not post arbitrary console lines.
+
+elapsed_ms is monotonic time since this boot, not a wall-clock timestamp.
+occurred_at is null until trusted device calendar timestamp support is implemented.
+The backend adds received_at in UTC; delayed upload time must not be presented as the original dose time.
+A startup error can have null dose_id/schedule_id and compartment 0.
+
+The authorized event is committed before movement and may have WAITING_FOR_FINGERPRINT state:
+it records the accepted authorization, immediately before entering HOMING.
+
+## History and notifications
+
+GET /api/v1/devices/mdp-demo/history returns dispensed, missed and error events plus received_at.
+GET /api/v1/devices/mdp-demo/notifications returns mock SMS records for missed/error events.
+
+A simulated passage is evidence only of the simulated condition.
+A physical passage would still not establish pill identity or medication ingestion.
+Do not rename dispensed to taken in the app.
+
+The reference service records one mock notification per missed/error event.
+It does not contact an SMS provider and does not claim delivery.
+The integration teammate should retain idempotency when adding a real provider.
+
+## Serial configuration diagnostic
+
+The sketch also accepts one serial line:
+
+~~~json
+{"command":"apply_config","config":{"revision":1,"timezone":"Asia/Kolkata","schedules":[]}}
+~~~
+
+It returns config_result. This is a local diagnostic and does not replace network synchronization.
+Unknown commands cannot operate the motor, authorize a patient or clear a physical fault.
