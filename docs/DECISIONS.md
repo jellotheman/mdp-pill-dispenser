@@ -7,9 +7,12 @@
 - main is the default/current Arduino branch. The original Python prototype is preserved on legacy/micropython.
 - The repository remains private.
 - Use community libraries through package managers, with pinned firmware versions.
-- The app already exists but has not been uploaded; inspect it before adapting UI/backend integration.
+- The supplied PillPilot Next.js app is under app/; preserve its visual design while using the shared service.
+- Keep one SQLite store for desired config, app-only medication labels, history and mock notifications.
+- The launcher starts the app and reference service; firmware stays on ESP32/Wokwi, with no extra device simulator.
+- Connected presentation uses a generated Wokwi package and MQTT bridge through a public broker for synthetic data only.
 - Firmware and integration share schema version 2.
-- HTTP is implemented as the initial device transport; the existing app/backend may replace the reference service.
+- HTTP remains a device transport; MQTT is an optional simulation-only transport. The reference service can be replaced while preserving the contract.
 - Real SMS delivery remains an integration task. The reference service records deduplicated mock notifications.
 - A stored interrupted attempt requires inspection; no automatic release retry.
 

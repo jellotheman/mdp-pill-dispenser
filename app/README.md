@@ -33,6 +33,8 @@ Checks are `npm run typecheck` and `npm run lint`.
   transaction and database. Names are never sent into firmware's exact-field config parser.
 - Display saved and applied revisions separately. Applied is a stored acknowledgement,
   not a device-online signal.
+- The read-only **Test integration API** panel checks the authenticated app-to-service request
+  and contract. It does not establish that the firmware or MQTT bridge is connected.
 - Poll controller outcome history and mock notification counts every three seconds.
   Timestamps are labelled as service receipt time; a dispensed report does not prove ingestion.
 - Sidebar links navigate to the existing schedule, history and integration sections.

@@ -1,5 +1,14 @@
 # ESP32 Arduino firmware — Sreeram
 
+## Connected laptop presentation
+
+Run `present.cmd` from the repository root to open the dashboard, reference API and MQTT bridge
+in separate terminal windows. Upload that session's `wokwi/` files to your existing
+Wokwi project for the connected demonstration. See [PRESENTATION.md](../docs/PRESENTATION.md).
+Firmware continues to run on ESP32/Wokwi; no additional device simulator is used. Canonical defaults
+and `output/wokwi/` remain the standalone package. The connected copy enables networking,
+uses daily dashboard schedules and sets a current-date 07:59:30 RTC.
+
 ## What changed
 
 The firmware uses Arduino/C++ and dependencies available through Arduino/Wokwi Library Manager.
@@ -10,6 +19,7 @@ There is no project-owned pysm.py to copy or explain. The earlier MicroPython im
 | PillDispenser.ino | setup/loop, buttons, indicators, RTC, NVS adapter and wiring |
 | DispenserCore.h | Schedule validation, durable state/outbox, FSM and mechanism contract |
 | HttpSync.h | Queued HTTP requests in a separate ESP32 task |
+| MqttSync.h | Optional MQTT demonstration transport |
 | settings.h / settings.example.h | Configuration loader and safe defaults; ignored settings.local.h override |
 | diagram.json | Wokwi simulation circuit |
 | libraries.txt | Exact Library Manager versions |
@@ -27,7 +37,7 @@ It does not copy third-party library internals or private local settings.
 4. Replace all of sketch.ino with output/wokwi/sketch.ino.
 5. Replace diagram.json with output/wokwi/diagram.json.
 6. Open Library Manager and press its + button.
-7. Search for and add AgileStateMachine, ArduinoJson, ESP32Servo, RTClib and Adafruit BusIO.
+7. Search for and add AgileStateMachine, ArduinoJson, ESP32Servo, RTClib, Adafruit BusIO and PubSubClient.
 8. Set the versions to those in output/wokwi/libraries.txt. You can create/edit libraries.txt and paste
    its contents directly to specify the versions.
 9. Press Play.
@@ -76,7 +86,7 @@ In the serial monitor, send this as one line:
 
 The supplied RTC starts at 07:59:55 on 31 October 2026. Configure before starting the run
 or use a suitable future time; expired occurrences are marked missed, not immediately dispensed.
-Use the backend and HTTP sync for the actual app route.
+Use the backend and a configured transport for the actual app route.
 
 The daily authentication window is two minutes; timer demos use twenty seconds.
 Occurrence identity is date + schedule ID, independent of configuration revision.
@@ -84,6 +94,13 @@ Editing a time does not grant a second release of the same occurrence on that da
 Timezone is fixed to Asia/Kolkata in this prototype; the RTC must be deliberately set to that local time.
 
 ## Connect the reference backend
+
+For the synthetic public-broker Wokwi presentation, use the generated session package described in
+[PRESENTATION.md](../docs/PRESENTATION.md). In source settings, `MDP_MQTT_ENABLED` selects the MQTT
+transport at compile time; `ENABLE_NETWORK`, `DEMO_TIMERS`, `MQTT_HOST`, `MQTT_PORT`,
+`MQTT_NAMESPACE`, `MQTT_USERNAME` and `MQTT_PASSWORD` configure it. Public MQTT is restricted to
+the simulation profile: its untrusted plaintext messages are not suitable for real data or hardware.
+An enabled network with `MDP_MQTT_ENABLED` set to 0 uses the HTTP path described below.
 
 1. Follow integration/README.md to start the API.
 2. Copy settings.example.h to settings.local.h beside the sketch. Keep the override outside Git.
@@ -110,12 +127,16 @@ Install Arduino CLI, then run:
 ~~~sh
 arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
 arduino-cli core install esp32:esp32@3.2.0 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
-arduino-cli lib install "AgileStateMachine@1.0.7" "ArduinoJson@7.4.2" "ESP32Servo@3.0.9" "RTClib@2.1.4" "Adafruit BusIO@1.17.2"
+arduino-cli lib install "AgileStateMachine@1.0.7" "ArduinoJson@7.4.2" "ESP32Servo@3.0.9" "RTClib@2.1.4" "Adafruit BusIO@1.17.2" "PubSubClient@2.8"
 arduino-cli compile --fqbn esp32:esp32:esp32 firmware/PillDispenser
 ~~~
 
 Arduino IDE can open PillDispenser.ino and install the same libraries via Library Manager.
 GitHub Actions compiles the canonical sketch and generated Wokwi sketch.
+For a real ESP32, select the matching board and serial port and upload the compiled sketch over
+USB using Arduino IDE or CLI. The sketch and headers form the program flashed to the board;
+Python and Wokwi are not installed on the ESP32. The simulated I/O must still be replaced with
+drivers matched to the actual electronics, and physical operation must be tested.
 
 ## Physical hardware remains a separate implementation
 

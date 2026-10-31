@@ -57,7 +57,7 @@ An error-state device cannot clear its fault by downloading another config.
 ## Event synchronization
 
 Critical events have IDs composed of device, random boot session and sequence.
-They are stored before transmission. The HTTP worker may send them repeatedly until the backend
+They are stored before transmission. The transport may send them repeatedly until the backend
 acknowledges the same ID. Only then does the main task remove the outbox entry.
 The backend accepts an identical replay once and rejects changed content using an existing ID.
 History and mock notification records therefore remain idempotent.
@@ -70,6 +70,9 @@ PillDispenser.ino owns the main control loop. It reads inputs, ticks the FSM, re
 idle, handles serial config commands, persists changes and handles network results.
 
 HttpSync.h runs blocking HTTPClient calls in another FreeRTOS task.
+The optional MqttSync.h uses a separate network task and queues as well; it is restricted to the
+simulation profile and communicates through the integration MQTT bridge. MQTT delivery to a broker
+is not a service receipt: only an application-level acknowledgement of the event ID clears the outbox.
 FreeRTOS queues pass copied request/response strings.
 The worker never touches JsonDocument objects shared with the controller, Preferences, or GPIO.
 Only the main task dispatches AgileStateMachine callbacks.
@@ -79,13 +82,31 @@ An exhausted durable outbox or failed local storage locks new work instead of lo
 
 ## Application and service
 
-The provided FastAPI/SQLite service is a reference implementation.
-The existing app has not been supplied or inspected. Its backend may replace this service if it
-implements the agreed contract. A fifth team role does not imply a second incompatible database.
+The supplied PillPilot Next.js app uses a server-side adapter to the FastAPI/SQLite reference service.
+The browser sends expected-revision schedule edits to Next.js; its server supplies the service token.
+The service commits medication labels and the desired configuration together. Labels remain separate
+from strict firmware config and map to stable schedule IDs. One database owns this data and history.
+The dashboard polls actual service history and distinguishes desired and applied revisions.
 
 The reference service supports one development bearer-token configuration.
-Patient accounts, multiple production device credentials, real SMS delivery, deployment and
-the existing app's UI are future integration work, not completed product features.
+Patient accounts, multiple production device credentials, real SMS delivery and deployment remain
+integration-team work. The connected reference path is deliberately small and can be replaced by a
+backend implementing the same contract; it is not a finished production service.
+
+## Presentation setup
+
+`scripts/present.py` prepares dependencies and opens separate app, API and MQTT bridge terminal windows.
+The firmware runs on the ESP32 or in the existing Wokwi project; there is no additional device
+simulator. Each new service presentation uses an ignored session directory for SQLite and settings.
+The bridge exchanges synthetic messages through a public broker reachable from browser Wokwi. A
+generated session Wokwi package contains its random topic namespace; the canonical standalone
+defaults are unchanged. The public broker is untrusted and cannot be used with real patient data.
+See PRESENTATION.md for the three project roles and walkthrough.
+
+The firmware can operate on its local persisted schedule without the app/service. The reference
+service is needed for companion-app schedule synchronization and history. Browser Wokwi needs a
+reachable endpoint rather than the laptop's localhost; saving an app schedule alone does not mean
+the ESP32 has applied it.
 
 ## What validation can establish
 

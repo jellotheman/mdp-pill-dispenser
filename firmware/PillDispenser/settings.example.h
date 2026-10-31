@@ -12,3 +12,14 @@ constexpr const char* DEVICE_TOKEN = ""; // match MDP_DEVICE_TOKEN on the servic
 // For HTTPS, paste the issuing root CA PEM here. Certificate verification stays on.
 // Time must also be valid: the network task requests NTP time after Wi-Fi connects.
 constexpr const char* BACKEND_ROOT_CA = "";
+
+// Optional public-broker demonstration transport. It is intentionally limited to
+// simulated hardware: public MQTT topics are not a trusted control channel.
+#define MDP_MQTT_ENABLED 0
+#if MDP_MQTT_ENABLED
+constexpr const char* MQTT_HOST = "broker.hivemq.com";
+constexpr unsigned MQTT_PORT = 1883;
+constexpr const char* MQTT_NAMESPACE = "replace-with-unique-demo-id";
+constexpr const char* MQTT_USERNAME = "";
+constexpr const char* MQTT_PASSWORD = "";
+#endif

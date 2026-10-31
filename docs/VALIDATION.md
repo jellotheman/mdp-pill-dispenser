@@ -1,6 +1,6 @@
 # Validation evidence and limits
 
-## Arduino/C++ implementation
+## Earlier Arduino/C++ validation
 
 Successful run:
 https://github.com/jellotheman/mdp-pill-dispenser/actions/runs/41171980287
@@ -45,9 +45,7 @@ It does not claim that the ESP32 network task fetched/acknowledged the configura
 
 ## Not yet observed or validated
 
-- Browser Wokwi execution/animation.
 - The compiled ESP32 Wi-Fi/HTTP/FreeRTOS path actually running against a reachable backend.
-- Integration of the user's existing app, whose source is still pending.
 - Real fingerprint matching/enrolment or physical passage sensing.
 - Actual homing, indexing, release reliability, physical access lock or power system.
 - Physical refill/fault recovery, long-term storage policy or arbitrary power-loss behavior.
@@ -56,6 +54,32 @@ It does not claim that the ESP32 network task fetched/acknowledged the configura
 The simulation assumes six slots containing one item each and uses virtual homing/indexing.
 The physical profile is deliberately blocked.
 A compilation result and a simulated passage do not establish physical-product correctness.
+
+## Companion integration and presentation
+
+The supplied app is now integrated with the shared reference service. Firmware remains the existing
+ESP32/Wokwi implementation; no additional device simulator is used. See PRESENTATION.md for the
+presentation setup and networking requirements. The earlier Actions run above predates this app
+integration; do not treat it as validation of the newly added app or launcher. Record current command
+results separately after running them.
+
+### Connected MQTT presentation, 31 October 2026
+
+The generated MQTT sketch compiled in the browser Wokwi project. The simulated ESP32 connected to
+HiveMQ, received the service's revision 1 schedule and acknowledged it; the dashboard showed Applied
+r1. A simulated matching fingerprint and one simulated passage produced a dispensed event, which
+arrived in the SQLite-backed API and appeared in the dashboard history. The dashboard's read-only API
+check also succeeded. This validates one demonstration path, not a physical device or an adversarial
+public network. The earlier attempted HTTP tunnel did not complete device synchronization and is not
+the presentation path.
+
+Local checks: 42 native controller scenarios; 38 Python tests including bridge and package tests;
+six dashboard origin tests; app lint, TypeScript checking and production build. The public broker also
+passed a synthetic-client configuration/event/receipt test. Public broker availability can vary.
+
+Test/presentation terminals must be stopped and closed before restarting or finishing tests. Only
+the final APP, API and BRIDGE windows should remain for the user; generated packages and session
+credentials remain in ignored output/ rather than committed source.
 
 ## Original Python implementation
 

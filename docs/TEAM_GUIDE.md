@@ -159,7 +159,7 @@ Most teammates can continue using browser uploads and do not need either compile
    Do not discard files to make a pull succeed.
 5. Fetch updates, switch to main when the worktree is safe, and pull with --ff-only.
 6. Open firmware/PillDispenser/PillDispenser.ino to work on board setup.
-7. DispenserCore.h contains the shared controller; HttpSync.h contains the network worker.
+7. DispenserCore.h contains the shared controller; HttpSync.h and MqttSync.h contain alternate network workers.
 8. Use Arduino IDE or Arduino CLI for the board build.
 9. Run the checks in firmware/README.md before pushing changes.
 
@@ -211,7 +211,7 @@ Change the canonical source under firmware/PillDispenser/ and regenerate it.
 Current contribution:
 - Arduino/C++ FSM, scheduling, matching-user authorization and mechanism stages.
 - Persistent occurrence/inventory records and event outbox.
-- Versioned schedule download/acknowledgement and HTTP transport.
+- Versioned schedule download/acknowledgement and HTTP or simulation MQTT transport.
 - Wokwi circuit, generated single-file sketch and behavioral checks.
 
 Next work:
@@ -248,15 +248,15 @@ The physical passage driver must be designed from the signal; the button debounc
 
 ### companion app
 
-The app already exists; upload its actual source and dependency files into app/.
-Submit a README with the exact installation/start commands and which screens use mock data.
-Do not upload node_modules, credentials or build caches.
+The supplied PillPilot source and dependency files are now under app/ and connected to the shared
+reference service. See app/README.md and docs/PRESENTATION.md to run it. Preserve the existing visual
+design and keep setup instructions current. Do not upload node_modules, credentials or build caches.
 
 With integration:
 - Map medication records to stable schedule IDs.
 - Show saved and applied-to-device as different statuses.
-- Display actual dispensed/missed/error history after API connection.
-- Preserve the UI where possible; replace/adapt the data layer after inspecting the existing code.
+- Retain actual dispensed/missed/error history from the shared API.
+- Preserve the UI where possible and keep its data model aligned with the device contract.
 - Do not describe a dispensed event as proof the person took medication.
 
 ### communication & integration

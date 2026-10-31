@@ -7,6 +7,9 @@
 #include "settings.h"
 #include "DispenserCore.h"
 #include "HttpSync.h"
+#if defined(MDP_MQTT_ENABLED) && MDP_MQTT_ENABLED
+#include "MqttSync.h"
+#endif
 
 constexpr int SERVO_PIN = 18, VALID_PIN = 19, INVALID_PIN = 23, DROP_PIN = 32;
 constexpr int RED_LED = 26, GREEN_LED = 27, BUZZER_PIN = 25;
@@ -57,7 +60,11 @@ WokwiMechanism simulation;
 mdp::UnconfiguredMechanism physical;
 mdp::Store* storage = nullptr;
 mdp::Controller* controller = nullptr;
+#if defined(MDP_MQTT_ENABLED) && MDP_MQTT_ENABLED
+MqttSync syncClient;
+#else
 HttpSync syncClient;
+#endif
 RTC_DS1307 rtc;
 Button validButton(VALID_PIN), invalidButton(INVALID_PIN), dropButton(DROP_PIN);
 uint64_t elapsed = 0, lastClock = 0;
@@ -118,7 +125,9 @@ void setup() {
   if (!syncClient.begin()) Serial.println("network settings incomplete; local operation only");
   Serial.println("Simulation profile: buttons represent user 1, rejected user, and one passage.");
   Serial.println("Virtual homing/indexing are logged; the servo visualizes release only.");
-  Serial.println("Demo timers: 5s / 35s / 65s. Type erase-demo only to reset disposable simulation data.");
+  if (DEMO_TIMERS) Serial.println("Demo timers: 5s / 35s / 65s.");
+  else Serial.println("Daily schedules use the simulated RTC.");
+  Serial.println("Type erase-demo only to reset disposable simulation data.");
   previousMillis = millis();
 }
 

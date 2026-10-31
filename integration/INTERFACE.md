@@ -34,6 +34,20 @@ Medication labels never enter the firmware payload. The firmware GET /config and
 event/acknowledgement routes remain unchanged. The original prototype's /api/schedules and
 /api/events endpoints are superseded; the browser cannot fabricate dose outcomes.
 
+### Optional MQTT demonstration transport
+
+`integration/mqtt_bridge.py` connects this same API to the simulation-only MQTT firmware transport.
+Topics under `mdp-demo/<namespace>/<device_id>/` are `config`, `config-ack`, `events` and
+`event-ack`. The bridge publishes strict device config retained at QoS 1. Firmware publishes
+configuration acknowledgements and events with retry; the bridge sends an event receipt only after
+the API accepts the matching ID. The broker's delivery acknowledgement alone must not remove the
+firmware's durable outbox entry. The bridge accepts simulated events only.
+
+The default public broker permits anyone to read or forge messages. It is for synthetic demos only;
+topic names are not authentication, and this transport is not enabled for the physical profile.
+The service still owns storage and the firmware owns scheduling and authorization. See
+[README.md](README.md) for bridge startup, broker options and limitations.
+
 ### Device configuration
 
 App:

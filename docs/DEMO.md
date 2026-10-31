@@ -1,5 +1,13 @@
 # Demonstration checklist
 
+## Connected local presentation
+
+Run `present.cmd` from the repository root for the supplied PillPilot app, shared reference API
+and MQTT bridge in separate terminal windows. Upload the session's connected
+Wokwi package to the existing project; firmware continues to run on its simulated ESP32.
+See [PRESENTATION.md](PRESENTATION.md) for the professor walkthrough, setup and stopping/restarting.
+The bridge and Wokwi exchange synthetic data through a public broker. --local-only skips the bridge.
+
 ## Native workflow and real HTTP replay
 
 From the repository root:
@@ -41,7 +49,8 @@ Save a future daily schedule through the service, observe applied_revision,
 then complete a Wokwi cycle and fetch its history.
 
 This connected ESP32 path must be run and observed separately; compilation and HTTP replay do not prove it.
-The existing app is still awaiting source upload, so there is no claim that its UI is integrated.
+The supplied app is connected to the service. A connected Wokwi run
+must still be configured and observed separately before claiming its UI/device network path works.
 
 ## Explain accurately
 

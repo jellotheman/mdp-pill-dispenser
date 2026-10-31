@@ -6,6 +6,7 @@ import { indiaDate } from "@/lib/format";
 import { SchedulePanel } from "@/components/schedule-panel";
 import { HistoryPanel } from "@/components/history-panel";
 import { DevicePanel } from "@/components/device-panel";
+import { ApiTestPanel } from "@/components/api-test-panel";
 
 const navigation = [
   ["overview", "▦", "Overview"], ["schedule", "◷", "Medication schedule"],
@@ -51,6 +52,7 @@ export default function Home() {
           <div>
             <HistoryPanel events={data?.events ?? []} schedules={schedules} />
             <DevicePanel data={data} connected={connected} />
+            <ApiTestPanel />
           </div>
         </div>
       </main>

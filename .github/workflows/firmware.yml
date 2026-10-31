@@ -51,13 +51,17 @@ jobs:
       - uses: arduino/setup-arduino-cli@v2
       - run: arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
       - run: arduino-cli core install esp32:esp32@3.2.0 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
-      - run: arduino-cli lib install "AgileStateMachine@1.0.7" "ArduinoJson@7.4.2" "ESP32Servo@3.0.9" "RTClib@2.1.4" "Adafruit BusIO@1.17.2"
+      - run: arduino-cli lib install "AgileStateMachine@1.0.7" "ArduinoJson@7.4.2" "ESP32Servo@3.0.9" "RTClib@2.1.4" "Adafruit BusIO@1.17.2" "PubSubClient@2.8"
       - run: arduino-cli compile --fqbn esp32:esp32:esp32 firmware/PillDispenser --output-dir output/esp32
       - run: python scripts/build_wokwi.py
       - run: |
           mkdir -p output/wokwi-build/sketch
           cp output/wokwi/sketch.ino output/wokwi-build/sketch/sketch.ino
           arduino-cli compile --fqbn esp32:esp32:esp32 output/wokwi-build/sketch --output-dir output/esp32-wokwi
+      - run: |
+          mkdir -p output/wokwi-build/mqtt_demo
+          python -c 'from pathlib import Path; s=Path("output/wokwi/sketch.ino").read_text(); Path("output/wokwi-build/mqtt_demo/mqtt_demo.ino").write_text(s.replace("#define MDP_MQTT_ENABLED 0", "#define MDP_MQTT_ENABLED 1"))'
+          arduino-cli compile --fqbn esp32:esp32:esp32 output/wokwi-build/mqtt_demo --output-dir output/esp32-mqtt
       - uses: actions/upload-artifact@v4
         with:
           name: compiled-esp32-firmware

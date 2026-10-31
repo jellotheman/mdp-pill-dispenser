@@ -1,81 +1,80 @@
 # MDP Smart Pill Dispenser
 
-Shared workspace for the five-person, first-year multidisciplinary project.
+PillPilot is the companion dashboard for a student ESP32 pill-dispenser project. The firmware is
+Arduino/C++; Python runs a small reference integration service and developer tools, not the device.
 
-**Firmware now uses Arduino/C++**, following the decision to simplify Wokwi and hardware-library setup.
-Start with [firmware instructions](firmware/README.md).
-For continuation in the local Codex app, read [CODEX_HANDOFF.md](docs/CODEX_HANDOFF.md).
+## Presentation on Windows
 
-| Folder | Owner / work |
+From the project root, run `present.cmd`. The first run installs dependencies and builds the app.
+The launcher opens separate local terminal windows and the dashboard at http://127.0.0.1:3000:
+
+- **APP** serves the dashboard.
+- **API** stores schedules, history and simulated notifications in a local SQLite database.
+- **BRIDGE** exchanges simulated device configuration and events with an MQTT broker.
+
+The ESP32 firmware runs separately in [the existing Wokwi project](https://wokwi.com/projects/479372515382840321).
+The launcher prints a session-specific `wokwi/` folder with `sketch.ino`, `diagram.json` and
+`libraries.txt`; use all three from the same session in Wokwi. See the
+[presentation guide](docs/PRESENTATION.md) for setup, buttons, restarting and troubleshooting.
+Python 3.10+, Node.js/npm and internet access are needed. `present.cmd --no-setup` reuses an
+existing build; `--local-only` starts just APP and API. Run the full command after source changes.
+
+The default MQTT demonstration uses a shared public broker and synthetic data only. Other clients
+can read or forge its messages; a random topic is not access control. Do not use real medication,
+patient or fingerprint information. A private authenticated broker and additional product work are
+required for a real deployment.
+
+Stop the project's previous terminals before starting or restarting. After tests, close their
+terminals and keep only the final APP, API and BRIDGE presentation windows open. Stop each with
+Ctrl+C. Session files and SQLite databases are kept under ignored `output/presentation/`.
+
+## How it works
+
+The app saves a desired schedule to the service. In the connected demo, the MQTT bridge sends that
+configuration to Wokwi; the firmware validates and persists it and reports its applied revision.
+The firmware uses its RTC to decide when a dose is due and retains its local schedule when offline.
+It reports durable events through the bridge to the service, and the app reads the resulting history.
+The service does not issue timed motor commands. The firmware requires local authorization and
+never permits a remote command to impersonate a fingerprint or directly dispense.
+
+The standalone simulation uses fixed 5/35/65-second demonstration offers, without a network.
+The connected presentation instead uses the simulated RTC and schedules saved through the app.
+The initial connected demonstration has doses at 08:00 and 08:02, with a third at 08:05 paused.
+The device acknowledgement distinguishes a saved schedule from one the controller actually applied.
+
+The same sketch and headers can be compiled and flashed to an ESP32, but this project does **not**
+yet contain working physical motor, fingerprint, pill-passage or lock drivers. Its physical profile
+deliberately refuses operation. The simulation models six compartments, one preloaded item per slot;
+its servo, buttons and timing do not validate a physical mechanism. SMS records are simulated.
+
+## Project folders and further reading
+
+| Folder | Purpose |
 | --- | --- |
-| firmware/ | Sreeram: ESP32 sketch, workflow, simulated/physical mechanism interface |
-| mechanical/ | Compartments, mechanism, enclosure, editable CAD and assembly |
-| electronics/ | Actual components, reviewed wiring, power and pin assignments |
-| app/ | Existing companion app; source still to be supplied |
-| integration/ | Reference API, schedule synchronization, history and notification delivery |
-| docs/ | Team instructions, architecture, physical decisions and handoff |
-| tests/ | Actual C++ workflow tests and Python reference-service tests |
+| `firmware/` | ESP32 controller, simulation and future physical mechanism interface |
+| `app/` | Next.js companion dashboard and server-side service adapter |
+| `integration/` | Reference API, MQTT bridge and shared contract |
+| `mechanical/`, `electronics/` | Physical design, components and wiring |
+| `docs/`, `tests/` | Team notes, handoff and verification |
 
-[Detailed beginner collaboration guide](docs/TEAM_GUIDE.md) ·
-[Architecture](docs/ARCHITECTURE.md) ·
-[App/device contract](integration/INTERFACE.md) ·
-[Hardware questions](docs/MECHANISM_BRIEF.md) ·
-[Validation evidence and limits](docs/VALIDATION.md)
+[Presentation](docs/PRESENTATION.md) · [Firmware](firmware/README.md) ·
+[Integration](integration/README.md) · [Contract](integration/INTERFACE.md) ·
+[Architecture](docs/ARCHITECTURE.md) · [Validation](docs/VALIDATION.md) ·
+[Later-session handoff](docs/CODEX_HANDOFF.md)
 
-## What is implemented
+## Development checks
 
-- A community FSM library (AgileStateMachine) with state entry callbacks and an explicit workflow.
-- Due-dose scheduling, matching-user authorization and rejection/missed-dose handling.
-- Mechanism operations that receive the actual target compartment and dose.
-- Homing, positioning, release and verification states with timeouts.
-- Persistent occurrence records and compartment inventory, written before actuation.
-- A persistent event outbox, unique event IDs, acknowledgement and retry.
-- Versioned configuration: validated/persisted locally, applied acknowledgement, busy deferral.
-- An HTTP client in a separate ESP32 task; sensor/motor logic stays in the main task.
-- A FastAPI/SQLite reference service with history and deduplicated mock SMS records.
-- A generated single-file Wokwi sketch using Library Manager dependencies.
+After installing dependencies, from the project root:
 
-## The simulation assumption
+```powershell
+.\.venv\Scripts\python.exe scripts/check_native.py --events
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe scripts/http_demo.py
+npm.cmd --prefix app test
+npm.cmd --prefix app run lint
+npm.cmd --prefix app run build
+```
 
-Only the simulation currently supplies a mechanism implementation: six virtual compartments,
-each holding **one preloaded item**. Homing and indexing are simulated by timed feedback.
-The pictured servo visualizes a release; it is not a real indexed carousel.
-Buttons simulate user matching and passage detection.
-
-A completed occurrence consumes its compartment. Tomorrow's schedule does not refill it.
-The physical mechanism and refill/maintenance procedure are still undecided.
-Setting SIMULATION_PROFILE=false deliberately blocks movement.
-
-No fingerprint sensor, real pill sensing, physical lock, or real SMS provider is implemented.
-A detected passage does not establish pill identity, a complete medically correct dose, or ingestion.
-
-## Run checks
-
-Install Python 3 and a C++17 compiler, then from the repository root:
-
-~~~sh
-python -m pip install -r requirements-dev.txt
-python scripts/check_native.py --events
-python -m pytest -q
-python scripts/http_demo.py
-python scripts/build_wokwi.py
-~~~
-
-The first native check downloads pinned development dependencies to .cache/.
-It executes the same controller header included by the ESP32 sketch, with the actual FSM library.
-The HTTP demo replays its events over real loopback HTTP; it does not execute ESP32 networking.
-
-For an actual ESP32 compile, use Arduino CLI/IDE as described in firmware/README.md.
-GitHub Actions performs both native/service checks and ESP32 compilation.
-See the latest successful run for evidence, rather than inferring success from test files.
-
-## Work in the browser or locally
-
-- [Create a Codespace](https://codespaces.new/jellotheman/mdp-pill-dispenser?quickstart=1), or open your local clone in Codex.
-- Open Wokwi separately using the free Arduino ESP32 template and generated files.
-- Saving in Wokwi does not update this repository.
-- Teammates can submit files through GitHub's Add file → Upload files.
-- Preserve existing local changes before pulling updates; see the handoff.
-
-The earlier MicroPython prototype remains available in Git history.
-It is no longer the firmware entry point, and its old 40-test result does not validate this implementation.
+Native controller checks need a C++17 compiler; running the app and service does not.
+See [VALIDATION.md](docs/VALIDATION.md) for observed results and limits. The earlier MicroPython
+prototype remains on `legacy/micropython`; it is no longer the entry point.

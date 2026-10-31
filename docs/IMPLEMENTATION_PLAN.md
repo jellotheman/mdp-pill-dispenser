@@ -9,7 +9,11 @@
 7. Execute native/API/HTTP checks and compile canonical/generated ESP32 sketches — passed including final packaging; see VALIDATION.md.
 8. Update beginner guides, contract, mechanism questions and local Codex handoff — complete.
 9. Put the checked Arduino version on the default main branch — complete.
-10. Integrate the existing app and actual hardware adapters — deferred until their source/specifications arrive.
+10. Integrate the supplied companion app with the shared API and prepare its local presentation — implemented; see PRESENTATION.md and current validation results.
+11. Add an optional synthetic-data MQTT bridge and simulation transport — implemented; see VALIDATION.md
+    for observed connected-run results, which are distinct from unit tests and compilation.
+12. Design and implement physical hardware adapters, provisioning and secure deployment — pending
+    agreed construction details and hardware testing.
 
 The previous implementation remains recoverable; no user work is discarded.
 The simulation mechanism is explicitly provisional and physical operation remains blocked.
