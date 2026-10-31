@@ -101,9 +101,9 @@ def wait_ready(url, process, label, *, timeout=60, show_progress=False):
                 if response.status == 200:
                     return
         except urllib.error.HTTPError as error:
-            reason = f"HTTP {error.code}; waiting for the tunnel to finish connecting"
+            reason = f"HTTP {error.code}; waiting for the service to become ready"
         except urllib.error.URLError as error:
-            reason = "waiting for DNS propagation" if isinstance(error.reason, socket.gaierror) else "waiting for HTTPS connectivity"
+            reason = "waiting for DNS resolution" if isinstance(error.reason, socket.gaierror) else "waiting for service connectivity"
         except OSError:
             reason = "waiting for service connectivity"
         if show_progress and time.monotonic() >= next_report:
