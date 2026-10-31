@@ -3,10 +3,10 @@
 ## Arduino/C++ implementation
 
 Successful run:
-https://github.com/jellotheman/mdp-pill-dispenser/actions/runs/41171457317
+https://github.com/jellotheman/mdp-pill-dispenser/actions/runs/41171980287
 
 Implementation commit checked by that run:
-84b827b317d7fc89dae586be190e90a0b77bbf38
+b7c87a32f49f91478fa43eae5049e1f5f3637de8
 
 Results:
 - 42 native C++ firmware scenarios passed using the actual DispenserCore.h.
@@ -17,8 +17,9 @@ Results:
 - The canonical ESP32 Arduino sketch compiled with core 3.2.0 and pinned dependencies.
 - The generated single-file Wokwi sketch also compiled for ESP32.
 
-The final documentation/default-configuration packaging update is checked again before promotion to main.
-A later passing run on main supersedes the commit link above; inspect the current Actions result.
+The final default-configuration packaging was included in that successful run, and that implementation
+is now on main. Later documentation-only changes do not change the checked firmware source.
+Inspect the current Actions result when changing source.
 
 ## What the native scenarios cover
 

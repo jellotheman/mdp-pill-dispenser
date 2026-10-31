@@ -6,9 +6,9 @@
 4. Introduce dose-aware mechanism operations and explicit stage/verification behavior — complete.
 5. Add persistent inventory, occurrence status and acknowledged event delivery — complete.
 6. Provide a reference configuration/history API while awaiting the existing app — complete.
-7. Execute native/API/HTTP checks and compile canonical/generated ESP32 sketches — passed; final packaging rechecked before promotion; see VALIDATION.md.
+7. Execute native/API/HTTP checks and compile canonical/generated ESP32 sketches — passed including final packaging; see VALIDATION.md.
 8. Update beginner guides, contract, mechanism questions and local Codex handoff — complete.
-9. Put the checked Arduino version on the default main branch — after final checks.
+9. Put the checked Arduino version on the default main branch — complete.
 10. Integrate the existing app and actual hardware adapters — deferred until their source/specifications arrive.
 
 The previous implementation remains recoverable; no user work is discarded.
