@@ -92,7 +92,7 @@ A **commit** is a saved version of the repository. The commit message says what
 changed. GitHub keeps the earlier version, so useful filenames do not need
 final-final-v7 added to them after every change.
 
-Browser uploads have file-size limits. If GitHub rejects a large CAD file, keep
+Browser uploads allow up to 25 MiB per file and 100 files per upload. If GitHub rejects a large CAD file, keep
 a smaller useful export and ask Sreeram to agree a large-file approach before
 trying again. Do not upload a whole software environment or generated folders.
 

@@ -2,6 +2,8 @@
 
 Shared workspace for a first-year, 2-credit multidisciplinary project.
 
+[Open in Codespaces](https://codespaces.new/jellotheman/mdp-pill-dispenser?quickstart=1) · [Test results](docs/VALIDATION.md)
+
 **Start here:** [Team collaboration guide](docs/TEAM_GUIDE.md).
 **Sreeram's part:** [Firmware and simulation guide](firmware/README.md).
 
@@ -62,6 +64,10 @@ Do not use this prototype to dispense real medication. A confirmed pill drop
 does not prove someone took medication.
 
 ## Test status
+
+**Verified:** 40 Python tests and the automatic demo passed; the MicroPython Unix
+compatibility smoke test also passed. [Details and limits](docs/VALIDATION.md).
+
 
 The workflow runs tests on pushes affecting firmware and on manual runs from
 **Actions → Firmware checks → Run workflow**. It also builds the MicroPython 1.26.0 Unix interpreter for a compatibility smoke
