@@ -24,7 +24,7 @@
       "left": 290,
       "attrs": {
         "color": "green",
-        "label": "valid fingerprint",
+        "label": "matched user 1 (simulated)",
         "key": "G"
       }
     },
@@ -46,7 +46,7 @@
       "left": 290,
       "attrs": {
         "color": "blue",
-        "label": "pill drop",
+        "label": "one passage (simulated)",
         "key": "B"
       }
     },
@@ -112,7 +112,7 @@
       "top": -200,
       "left": 0,
       "attrs": {
-        "text": "MDP — demonstration only\\nbuttons simulate fingerprint and pill detection"
+        "text": "MDP Arduino simulation\nvirtual homing/indexing; servo visualizes release"
       }
     }
   ],

@@ -1,52 +1,43 @@
 name: Firmware checks
 on:
   push:
-    paths:
-      - 'firmware/**'
-      - 'tests/**'
-      - 'scripts/**'
-      - 'requirements-dev.txt'
-      - 'pytest.ini'
-      - '.github/workflows/firmware.yml'
+    paths: ['firmware/**', 'integration/**', 'tests/**', 'scripts/**', 'requirements-dev.txt', 'pytest.ini', '.github/workflows/firmware.yml']
   pull_request:
-    paths:
-      - 'firmware/**'
-      - 'tests/**'
-      - 'scripts/**'
-      - 'requirements-dev.txt'
-      - 'pytest.ini'
-      - '.github/workflows/firmware.yml'
+    paths: ['firmware/**', 'integration/**', 'tests/**', 'scripts/**', 'requirements-dev.txt', 'pytest.ini', '.github/workflows/firmware.yml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  firmware:
+  logic-and-integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements-dev.txt
+      - run: python scripts/check_native.py --events
       - run: python -m pytest -q
-      - run: python scripts/demo.py
+      - run: python scripts/http_demo.py
+      - run: python scripts/build_wokwi.py
       - uses: actions/upload-artifact@v4
         with:
-          name: dispenser-demo-events
-          path: output/demo-events.jsonl
-  micropython:
+          name: wokwi-arduino-and-example-events
+          path: |
+            output/wokwi/
+            output/demo-events.jsonl
+  esp32-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - run: arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+      - run: arduino-cli core install esp32:esp32@3.2.0 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+      - run: arduino-cli lib install "AgileStateMachine@1.0.8" "ArduinoJson@7.4.2" "ESP32Servo@3.0.9" "RTClib@2.1.4" "Adafruit BusIO@1.17.2"
+      - run: arduino-cli compile --fqbn esp32:esp32:esp32 firmware/PillDispenser --output-dir output/esp32
+      - uses: actions/upload-artifact@v4
         with:
-          repository: micropython/micropython
-          ref: v1.26.0
-          path: micropython-runtime
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y libffi-dev pkg-config
-      - run: make -C micropython-runtime/ports/unix submodules
-      - run: make -C micropython-runtime/ports/unix -j2
-      - run: micropython-runtime/ports/unix/build-standard/micropython tests/micropython_smoke.py
+          name: compiled-esp32-firmware
+          path: output/esp32
