@@ -1,0 +1,260 @@
+{
+  "version": 1,
+  "author": "jellotheman",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo",
+      "top": 0,
+      "left": 330,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "valid",
+      "top": 170,
+      "left": 290,
+      "attrs": {
+        "color": "green",
+        "label": "valid fingerprint",
+        "key": "G"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "invalid",
+      "top": 270,
+      "left": 290,
+      "attrs": {
+        "color": "red",
+        "label": "invalid fingerprint",
+        "key": "R"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "drop",
+      "top": 370,
+      "left": 290,
+      "attrs": {
+        "color": "blue",
+        "label": "pill drop",
+        "key": "B"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "red",
+      "top": 180,
+      "left": 520,
+      "attrs": {
+        "color": "red"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "green",
+      "top": 280,
+      "left": 520,
+      "attrs": {
+        "color": "green"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rred",
+      "top": 230,
+      "left": 510,
+      "rotate": 90,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rgreen",
+      "top": 330,
+      "left": 510,
+      "rotate": 90,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "buzzer",
+      "top": 380,
+      "left": 500,
+      "attrs": {
+        "volume": "0.1"
+      }
+    },
+    {
+      "type": "wokwi-ds1307",
+      "id": "rtc",
+      "top": -140,
+      "left": 290,
+      "attrs": {
+        "initTime": "2026-10-31T07:59:55"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "title",
+      "top": -200,
+      "left": 0,
+      "attrs": {
+        "text": "MDP — demonstration only\\nbuttons simulate fingerprint and pill detection"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "servo:PWM",
+      "esp:18",
+      "orange",
+      []
+    ],
+    [
+      "servo:V+",
+      "esp:5V",
+      "red",
+      []
+    ],
+    [
+      "servo:GND",
+      "esp:GND.3",
+      "black",
+      []
+    ],
+    [
+      "valid:1.l",
+      "esp:19",
+      "green",
+      []
+    ],
+    [
+      "valid:2.r",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "invalid:1.l",
+      "esp:23",
+      "red",
+      []
+    ],
+    [
+      "invalid:2.r",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "drop:1.l",
+      "esp:32",
+      "blue",
+      []
+    ],
+    [
+      "drop:2.r",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "esp:26",
+      "rred:1",
+      "red",
+      []
+    ],
+    [
+      "rred:2",
+      "red:A",
+      "red",
+      []
+    ],
+    [
+      "red:C",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:27",
+      "rgreen:1",
+      "green",
+      []
+    ],
+    [
+      "rgreen:2",
+      "green:A",
+      "green",
+      []
+    ],
+    [
+      "green:C",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:25",
+      "buzzer:2",
+      "purple",
+      []
+    ],
+    [
+      "buzzer:1",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "rtc:5V",
+      "esp:5V",
+      "red",
+      []
+    ],
+    [
+      "rtc:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "rtc:SDA",
+      "esp:21",
+      "blue",
+      []
+    ],
+    [
+      "rtc:SCL",
+      "esp:22",
+      "orange",
+      []
+    ]
+  ],
+  "dependencies": {}
+}

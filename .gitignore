@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.env
+.env.*
+!.env.example
+secrets.py
+dose-journal.json
+dose-journal.json.tmp
+output/
+.DS_Store
+Thumbs.db
+~$*
+micropython-runtime/

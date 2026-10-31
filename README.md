@@ -64,8 +64,8 @@ does not prove someone took medication.
 ## Test status
 
 The workflow runs tests on pushes affecting firmware and on manual runs from
-**Actions → Firmware checks → Run workflow**. Read the latest run to see the
-actual result. Inclusion of tests alone does not mean they have passed.
+**Actions → Firmware checks → Run workflow**. It also builds the MicroPython 1.26.0 Unix interpreter for a compatibility smoke
+test with a fake motor. Read the latest run to see the actual result. Inclusion of tests alone does not mean they have passed.
 
 [Demonstration walkthrough](docs/DEMO.md) ·
 [Shared data interface](integration/INTERFACE.md) ·

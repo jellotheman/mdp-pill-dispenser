@@ -1,0 +1,10 @@
+component,interface,esp32_gpio,simulation_role,status
+servo gate,PWM,18,one demo compartment only,provisional
+valid fingerprint button,input pull-up,19,simulated fingerprint success,simulation only
+invalid fingerprint button,input pull-up,23,simulated fingerprint failure,simulation only
+pill drop button,input pull-up,32,simulated fresh detection,simulation only
+reminder red LED,GPIO output,26,reminder/missed/error,provisional
+completed green LED,GPIO output,27,verified dispensing,provisional
+buzzer,PWM,25,reminder pulses,provisional
+DS1307 SDA,I2C,21,clock for optional daily schedule mode,simulation only
+DS1307 SCL,I2C,22,clock for optional daily schedule mode,simulation only
