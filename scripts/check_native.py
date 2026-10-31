@@ -15,7 +15,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CACHE = ROOT / ".cache" / "native"
 CACHE.mkdir(parents=True, exist_ok=True)
 DEPS = {
-    "AgileStateMachine": ("cotestatnt/AgileStateMachine", "d9e94674f41b9ed724f2fd3dffacc47d92927cff"),
+    "AgileStateMachine": ("cotestatnt/AgileStateMachine", "86caf5514103b9f393c041da0cbc2ce94c066de2"),
     "ArduinoJson": ("bblanchon/ArduinoJson", "v7.4.2"),
 }
 for name, (repo, ref) in DEPS.items():

@@ -1,79 +1,81 @@
 # MDP Smart Pill Dispenser
 
-Shared workspace for a first-year, 2-credit multidisciplinary project.
+Shared workspace for the five-person, first-year multidisciplinary project.
 
-[Open in Codespaces](https://codespaces.new/jellotheman/mdp-pill-dispenser?quickstart=1) · [Test results](docs/VALIDATION.md)
-
-**Start here:** [Team collaboration guide](docs/TEAM_GUIDE.md).
-**Sreeram's part:** [Firmware and simulation guide](firmware/README.md).
-
-## Where everyone's work goes
+**Firmware now uses Arduino/C++**, following the decision to simplify Wokwi and hardware-library setup.
+Start with [firmware instructions](firmware/README.md).
+For continuation in the local Codex app, read [CODEX_HANDOFF.md](docs/CODEX_HANDOFF.md).
 
 | Folder | Owner / work |
 | --- | --- |
-| firmware/ | Sreeram: ESP32 MicroPython code and Wokwi circuit |
-| mechanical/ | Pill tray, mechanism, enclosure, CAD and assembly |
-| electronics/ | Component list, wiring, power and pin map |
-| app/ | Companion app for schedules and dispensing history |
-| integration/ | App/device data exchange, history and SMS workflow |
-| docs/ | Shared instructions, decisions and demonstration steps |
-| tests/ | Firmware behaviour tests |
+| firmware/ | Sreeram: ESP32 sketch, workflow, simulated/physical mechanism interface |
+| mechanical/ | Compartments, mechanism, enclosure, editable CAD and assembly |
+| electronics/ | Actual components, reviewed wiring, power and pin assignments |
+| app/ | Existing companion app; source still to be supplied |
+| integration/ | Reference API, schedule synchronization, history and notification delivery |
+| docs/ | Team instructions, architecture, physical decisions and handoff |
+| tests/ | Actual C++ workflow tests and Python reference-service tests |
 
-Other members' folders begin with instructions, not finished implementations.
+[Detailed beginner collaboration guide](docs/TEAM_GUIDE.md) ·
+[Architecture](docs/ARCHITECTURE.md) ·
+[App/device contract](integration/INTERFACE.md) ·
+[Hardware questions](docs/MECHANISM_BRIEF.md) ·
+[Validation evidence and limits](docs/VALIDATION.md)
 
-## Work entirely in the browser
+## What is implemented
 
-1. Open this repository on GitHub.
-2. Choose **Code → Codespaces → Create codespace on main**.
-3. Wait for setup to finish. Python and pytest are configured automatically.
-4. In its terminal run:
+- A community FSM library (AgileStateMachine) with state entry callbacks and an explicit workflow.
+- Due-dose scheduling, matching-user authorization and rejection/missed-dose handling.
+- Mechanism operations that receive the actual target compartment and dose.
+- Homing, positioning, release and verification states with timeouts.
+- Persistent occurrence records and compartment inventory, written before actuation.
+- A persistent event outbox, unique event IDs, acknowledgement and retry.
+- Versioned configuration: validated/persisted locally, applied acknowledgement, busy deferral.
+- An HTTP client in a separate ESP32 task; sensor/motor logic stays in the main task.
+- A FastAPI/SQLite reference service with history and deduplicated mock SMS records.
+- A generated single-file Wokwi sketch using Library Manager dependencies.
 
-```sh
+## The simulation assumption
+
+Only the simulation currently supplies a mechanism implementation: six virtual compartments,
+each holding **one preloaded item**. Homing and indexing are simulated by timed feedback.
+The pictured servo visualizes a release; it is not a real indexed carousel.
+Buttons simulate user matching and passage detection.
+
+A completed occurrence consumes its compartment. Tomorrow's schedule does not refill it.
+The physical mechanism and refill/maintenance procedure are still undecided.
+Setting SIMULATION_PROFILE=false deliberately blocks movement.
+
+No fingerprint sensor, real pill sensing, physical lock, or real SMS provider is implemented.
+A detected passage does not establish pill identity, a complete medically correct dose, or ingestion.
+
+## Run checks
+
+Install Python 3 and a C++17 compiler, then from the repository root:
+
+~~~sh
+python -m pip install -r requirements-dev.txt
+python scripts/check_native.py --events
 python -m pytest -q
-python scripts/demo.py
-```
+python scripts/http_demo.py
+python scripts/build_wokwi.py
+~~~
 
-Use `python scripts/demo.py --interactive` to control a virtual dispenser yourself.
+The first native check downloads pinned development dependencies to .cache/.
+It executes the same controller header included by the ESP32 sketch, with the actual FSM library.
+The HTTP demo replays its events over real loopback HTTP; it does not execute ESP32 networking.
 
-No local Python, Docker or ESP32 is needed for these commands. Codespaces uses
-your GitHub account's allowance/billing; stop it when finished. The light
-github.dev editor also works for edits/uploads but cannot run these commands.
+For an actual ESP32 compile, use Arduino CLI/IDE as described in firmware/README.md.
+GitHub Actions performs both native/service checks and ESP32 compilation.
+See the latest successful run for evidence, rather than inferring success from test files.
 
-For the actual animated ESP32 circuit, follow the Wokwi steps in
-[firmware/README.md](firmware/README.md). Wokwi is a separate browser tab; it
-does not automatically sync with this private repository.
+## Work in the browser or locally
 
-## Implemented in the prototype
+- [Create a Codespace](https://codespaces.new/jellotheman/mdp-pill-dispenser?quickstart=1), or open your local clone in Codex.
+- Open Wokwi separately using the free Arduino ESP32 template and generated files.
+- Saving in Wokwi does not update this repository.
+- Teammates can submit files through GitHub's Add file → Upload files.
+- Preserve existing local changes before pulling updates; see the handoff.
 
-- Explicit FSM using the community pysm library.
-- Due-dose scheduling; fingerprint success/failure supplied by simulation buttons.
-- Reminder LEDs and buzzer, servo gate demonstration.
-- Pill-drop confirmation, missed-dose and motor/verification timeout handling.
-- Duplicate suppression using an occurrence journal and inspection-required
-  restart after an interrupted dispensing attempt.
-- JSON events for the integration teammate; SMS requests are mock events.
-- Terminal demo, pytest scenarios, and a GitHub Actions test workflow.
-
-This demonstrates **one compartment and one gate**. It does not yet index a
-multi-compartment carousel. The fingerprint reader, real SMS delivery, physical
-lock, network transport, app and finished mechanical hardware are not implemented.
-All actuation is for simulation; real motor/power/RTC/fingerprint drivers must be
-agreed and checked with the hardware members first.
-
-Do not use this prototype to dispense real medication. A confirmed pill drop
-does not prove someone took medication.
-
-## Test status
-
-**Verified:** 40 Python tests and the automatic demo passed; the MicroPython Unix
-compatibility smoke test also passed. [Details and limits](docs/VALIDATION.md).
-
-
-The workflow runs tests on pushes affecting firmware and on manual runs from
-**Actions → Firmware checks → Run workflow**. It also builds the MicroPython 1.26.0 Unix interpreter for a compatibility smoke
-test with a fake motor. Read the latest run to see the actual result. Inclusion of tests alone does not mean they have passed.
-
-[Demonstration walkthrough](docs/DEMO.md) ·
-[Shared data interface](integration/INTERFACE.md) ·
-[Project decisions](docs/DECISIONS.md) ·
-[References and library licences](THIRD_PARTY.md)
+The earlier MicroPython prototype remains available in Git history.
+It is no longer the firmware entry point, and its old 40-test result does not validate this implementation.

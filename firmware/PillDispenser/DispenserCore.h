@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <memory>
+#include <vector>
 
 namespace mdp {
 constexpr unsigned CAPACITY = 6, MAX_PENDING = 24;
@@ -223,11 +225,11 @@ class Controller {
   Controller(Mechanism& mechanism, Store& store, Emit emit)
       : mechanism(mechanism), store(store), emit_(emit),
         states_{
-          State("IDLE", &enter<Phase::Idle>), State("WAITING_FOR_FINGERPRINT", &enter<Phase::Waiting>),
-          State("HOMING", &enter<Phase::Homing>), State("POSITIONING", &enter<Phase::Positioning>),
-          State("RELEASING", &enter<Phase::Releasing>), State("VERIFYING", &enter<Phase::Verifying>),
-          State("COMPLETED", &enter<Phase::Completed>), State("MISSED", &enter<Phase::Missed>),
-          State("ERROR", &enter<Phase::Error>)} {
+          State("IDLE", &enter<Phase::Idle>, nullptr, nullptr), State("WAITING_FOR_FINGERPRINT", &enter<Phase::Waiting>, nullptr, nullptr),
+          State("HOMING", &enter<Phase::Homing>, nullptr, nullptr), State("POSITIONING", &enter<Phase::Positioning>, nullptr, nullptr),
+          State("RELEASING", &enter<Phase::Releasing>, nullptr, nullptr), State("VERIFYING", &enter<Phase::Verifying>, nullptr, nullptr),
+          State("COMPLETED", &enter<Phase::Completed>, nullptr, nullptr), State("MISSED", &enter<Phase::Missed>, nullptr, nullptr),
+          State("ERROR", &enter<Phase::Error>, nullptr, nullptr)} {
     for (auto& s : states_) fsm_.addState(s);
     link<Trigger::Due>(Phase::Idle, Phase::Waiting);
     link<Trigger::Expired>(Phase::Idle, Phase::Missed);
@@ -240,7 +242,7 @@ class Controller {
     link<Trigger::Settled>(Phase::Completed, Phase::Idle);
     link<Trigger::Settled>(Phase::Missed, Phase::Idle);
     for (unsigned i = 0; i < 8; ++i) link<Trigger::Fault>(static_cast<Phase>(i), Phase::Error);
-    fsm_.setInitialState(states_[0]);
+    fsm_.setInitialState(&states_[0]);
     fsm_.start();
   }
 
@@ -336,6 +338,7 @@ class Controller {
 
  private:
   State states_[9];
+  std::vector<std::unique_ptr<Transition>> transitions_;
   StateMachine fsm_;
   Emit emit_;
   Trigger trigger_ = Trigger::None;
@@ -347,7 +350,10 @@ class Controller {
   template<Trigger T> static bool condition() { return active_->trigger_ == T; }
   template<Phase P> static void enter() { active_->onEnter(P); }
   template<Trigger T> void link(Phase from, Phase to) {
-    states_[static_cast<unsigned>(from)].addTransition(states_[static_cast<unsigned>(to)], &condition<T>);
+    // 1.0.7's reference API does not own transitions; the controller owns them.
+    auto tr = std::unique_ptr<Transition>(new Transition(&states_[static_cast<unsigned>(to)], &condition<T>));
+    states_[static_cast<unsigned>(from)].addTransition(*tr);
+    transitions_.push_back(std::move(tr));
   }
 
   void dispatch(Trigger t) {

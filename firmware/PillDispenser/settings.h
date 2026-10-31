@@ -1,4 +1,7 @@
 #pragma once
+#if __has_include("settings.local.h")
+#include "settings.local.h"
+#else
 // SIMULATION_PROFILE is a capability choice, not a "finished hardware" switch.
 // false deliberately blocks actuation until a real Mechanism is implemented.
 constexpr bool SIMULATION_PROFILE = true;
@@ -12,3 +15,5 @@ constexpr const char* DEVICE_TOKEN = ""; // match MDP_DEVICE_TOKEN on the servic
 // For HTTPS, paste the issuing root CA PEM here. Certificate verification stays on.
 // Time must also be valid: the network task requests NTP time after Wi-Fi connects.
 constexpr const char* BACKEND_ROOT_CA = "";
+
+#endif
