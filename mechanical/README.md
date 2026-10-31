@@ -1,34 +1,67 @@
-# Mechanical design
+# 6-Compartment Automatic Pill Dispenser – 3D Printable Parts
 
-Start with [the team guide](../docs/TEAM_GUIDE.md), particularly the browser-upload
-steps and your role's deliverables.
+**Compatible with** the MDP Smart Pill Dispenser project  
+https://github.com/jellotheman/mdp-pill-dispenser
 
-## Put these here
-- editable/: source CAD from FreeCAD, Fusion, SolidWorks, OpenSCAD or your chosen tool.
-- exports/: STL files for printable parts and STEP exports for exchanging geometry.
-- renders/: clear outside, inside and mechanism views.
-- assembly.md: dimensions, assembly order, motor assumption and outstanding questions.
+Designed to match the current firmware simulation assumptions:
+- 6 compartments
+- One preloaded item per compartment
+- Servo-actuated gate for release
+- Space for electronics and motor
 
-Upload actual design files, not only screenshots. You may create these subfolders
-when you have files for them; GitHub does not store empty folders.
+## Files (ready to print)
 
-## First milestone
-Show the compartments, dispensing path, motor mount, enclosure and reserved
-electronics space. Include enough dimensions for the electronics person to check
-fit. Explain how one actuator command releases the intended dose.
+| File | Description | Suggested material / settings |
+|------|-------------|-------------------------------|
+| `01_tray_carousel_6slot.stl` | Rotating tray with 6 radial compartments + central hub + shaft hole + indexing holes | PLA or PETG, 0.2 mm layer, 15-20% infill, no supports needed if printed flat |
+| `02_base_enclosure.stl` | Main base with tray cavity, electronics bay, outlet chute, motor platform, servo pocket, feet | PLA/PETG, 0.2 mm, 20% infill |
+| `03_lid.stl` | Simple lid that sits on the tray (with small central opening) | PLA, 0.2 mm, 15% infill |
+| `04_servo_gate.stl` | Small flap for the outlet (hinge pin holes for 2 mm filament or M2 screw) | PETG preferred (slight flexibility), 0.15-0.2 mm |
 
-The current firmware shows a single servo gate for simulation. It does not commit
-the team to that mechanism or implement a stepper carousel. Agree the real
-mechanism with firmware and electronics before refining the motor mount.
+Also included:
+- `*.scad` – parametric source (edit in OpenSCAD or FreeCAD)
+- `00_assembly_preview.scad` – visual check only (do not print)
 
-## References
-- https://github.com/Willykengineering/Automatic-Supplement-Pill-Dispenser
-- https://github.com/Shaztech/Pilldispenser
-- https://github.com/Elegiac-Quantum/mendo-pill-dispenser
+## Key dimensions (mm)
 
-Inspect licensing before reusing models; public access alone is not permission
-to redistribute or modify them. List any reused files and their source/licence.
+- Tray outer diameter: **120**
+- Tray height: **28**
+- Number of compartments: **6**
+- Central shaft hole: **~8.4** (for 8 mm shaft + clearance)
+- Hub diameter: **22**
+- Base outer diameter: **140**
+- Base height: **45**
+- Electronics bay (approx): **70 × 55 × 28**
+- Outlet opening: **18 × 14**
+- Wall thickness: **~2.2**
 
-## Add a progress note after uploading
-What opens with which tool? What is modelled? What is physically tested? Which
-dimensions are provisional? What do you need from electronics or firmware?
+## Printing recommendations
+
+1. Print the **tray** flat on the bed (floor down).
+2. Print the **base** upright or on its side if your printer needs supports for the electronics bay overhang.
+3. Print the **gate** flat.
+4. Use **0.2 mm** layer height, **2-3 perimeters**, **15-25%** gyroid or grid infill.
+5. For the shaft hole, you may need light sanding or a drill to final size depending on your printer tolerance.
+6. Recommended filament: **PETG** for the tray and gate (better durability and less warping with temperature changes). PLA is fine for prototypes.
+
+## Assembly outline
+
+1. Mount a small servo (SG90 / MG90S) or stepper in the base so its shaft comes up through the central platform.
+2. Attach a coupler / hub to the motor shaft and fix the tray on top (set screw or friction fit).
+3. Align one compartment with the outlet chute.
+4. Install the servo gate over the outlet so the servo horn can open/close it.
+5. Place the lid on top.
+6. Route wires from the electronics bay to the ESP32 / motor driver.
+
+The current firmware still runs in **simulation profile**. You will need to implement the real `Mechanism` driver (homing, select, release, passage sensor) once the physical hardware is chosen – see `docs/MECHANISM_BRIEF.md` in the repository.
+
+## How to modify
+
+Open any `.scad` file in **OpenSCAD** (free) or import into **FreeCAD**.  
+All important sizes are variables at the top of `generate_dispenser.py`.  
+Re-run the Python script or edit the SCAD directly, then export new STLs.
+
+## Licence / attribution
+
+Student project parts. Feel free to modify.  
+If you reuse significant geometry from other open-source dispensers, check their licences and credit them in the repository as required by the team guide.
