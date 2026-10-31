@@ -1,0 +1,200 @@
+openapi: 3.1.0
+info:
+  title: PillPilot Smart Dispenser API
+  version: 0.1.0
+  description: |
+    Minimal prototype API for the companion dashboard and simulated dispenser.
+    This API uses in-memory demo data and is not intended for clinical use.
+servers:
+  - url: http://localhost:3000
+    description: Local Next.js development server
+tags:
+  - name: Schedules
+  - name: Events
+paths:
+  /api/schedules:
+    get:
+      tags: [Schedules]
+      summary: List medication schedules
+      operationId: listSchedules
+      responses:
+        "200":
+          description: Schedule list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [schedules]
+                properties:
+                  schedules:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Schedule"
+    post:
+      tags: [Schedules]
+      summary: Create a medication schedule
+      operationId: createSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSchedule"
+            example:
+              medication: Morning medication
+              time: "08:00"
+              compartment: 1
+              enabled: true
+      responses:
+        "201":
+          description: Schedule created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /api/events:
+    get:
+      tags: [Events]
+      summary: List dose events, newest first
+      operationId: listEvents
+      responses:
+        "200":
+          description: Dose event list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [events]
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DoseEvent"
+    post:
+      tags: [Events]
+      summary: Record a dispenser event
+      operationId: createEvent
+      description: Called by the integration service or simulator when a dose event occurs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDoseEvent"
+            example:
+              dose_id: dose-001
+              event: dispensed
+              timestamp: "2026-10-29T08:00:00+05:30"
+              message: Simulated from firmware
+      responses:
+        "201":
+          description: Event recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DoseEvent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: The supplied dose_id does not match a schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Schedule:
+      type: object
+      required: [dose_id, medication, time, compartment, enabled]
+      properties:
+        dose_id:
+          type: string
+          example: dose-001
+        medication:
+          type: string
+          maxLength: 80
+          example: Morning medication
+        time:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          description: Local 24-hour time, HH:MM
+          example: "08:00"
+        compartment:
+          type: integer
+          minimum: 1
+          example: 1
+        enabled:
+          type: boolean
+          default: true
+    CreateSchedule:
+      type: object
+      required: [medication, time, compartment]
+      properties:
+        dose_id:
+          type: string
+          description: Optional; server generates one if omitted
+        medication:
+          type: string
+          minLength: 1
+          maxLength: 80
+        time:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        compartment:
+          type: integer
+          minimum: 1
+        enabled:
+          type: boolean
+          default: true
+    DoseEvent:
+      type: object
+      required: [event_id, dose_id, event, timestamp]
+      properties:
+        event_id:
+          type: string
+          example: evt-001
+        dose_id:
+          type: string
+          example: dose-001
+        event:
+          type: string
+          enum: [dispensed, missed, reminder, error]
+        timestamp:
+          type: string
+          format: date-time
+        message:
+          type: string
+          description: Optional demo/debug note
+    CreateDoseEvent:
+      type: object
+      required: [dose_id, event]
+      properties:
+        event_id:
+          type: string
+          description: Optional; server generates one if omitted
+        dose_id:
+          type: string
+        event:
+          type: string
+          enum: [dispensed, missed, reminder, error]
+        timestamp:
+          type: string
+          format: date-time
+          description: Optional; server uses current time if omitted
+        message:
+          type: string
+  responses:
+    BadRequest:
+      description: Invalid request body or fields
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

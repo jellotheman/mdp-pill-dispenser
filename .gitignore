@@ -3,7 +3,11 @@ output/
 .venv/
 __pycache__/
 .pytest_cache/
+.playwright-cli/
 node_modules/
 .env
+.env.local
+.next/
+*.tsbuildinfo
 settings.local.h
 *.sqlite3

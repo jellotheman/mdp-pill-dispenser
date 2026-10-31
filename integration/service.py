@@ -47,6 +47,21 @@ class ConfigAck(StrictModel):
     reason: Annotated[str, Field(max_length=256)] = ""
 
 
+class CompanionSchedule(Schedule):
+    medication: Annotated[str, Field(min_length=1, max_length=80, strict=True)]
+
+    @model_validator(mode="after")
+    def trim_label(self):
+        self.medication = self.medication.strip()
+        if not self.medication:
+            raise ValueError("medication label must not be blank")
+        return self
+
+
+class CompanionUpdate(ConfigUpdate):
+    schedules: Annotated[list[CompanionSchedule], Field(max_length=32)]
+
+
 class DeviceEvent(StrictModel):
     schema_version: Literal[2]
     event_id: Annotated[str, Field(min_length=1, max_length=128)]
@@ -92,6 +107,9 @@ def create_app(db_path=None, token=None):
           event_id TEXT PRIMARY KEY, device_id TEXT NOT NULL, payload TEXT NOT NULL, received_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS notifications(
           event_id TEXT PRIMARY KEY, device_id TEXT NOT NULL, status TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS medication_labels(
+          device_id TEXT NOT NULL, schedule_id TEXT NOT NULL, medication TEXT NOT NULL,
+          PRIMARY KEY(device_id, schedule_id));
         """)
 
     def authorize(authorization: str = Header(default="")):
@@ -106,6 +124,30 @@ def create_app(db_path=None, token=None):
     app = FastAPI(title="MDP reference integration service", version="2")
     guarded = [Depends(authorize)]
 
+    def save_config(db, device_id, update):
+        current = json.loads(device(db, device_id)["config"])
+        if current["revision"] != update.expected_revision:
+            raise HTTPException(409, "configuration changed; refresh before editing again")
+        result = {"revision": current["revision"] + 1, "timezone": update.timezone,
+                  "schedules": [s.model_dump(include=set(Schedule.model_fields)) for s in update.schedules]}
+        db.execute("UPDATE devices SET config=? WHERE id=?", (json.dumps(result), device_id))
+        return result
+
+    def config_status(row):
+        desired = json.loads(row["config"])["revision"]
+        return {"desired_revision": desired, "applied_revision": row["applied_revision"],
+                "synchronized": desired == row["applied_revision"],
+                "last_config_result": json.loads(row["config_result"]) if row["config_result"] else None}
+
+    def history_records(db, device_id):
+        rows = db.execute("SELECT payload, received_at FROM events WHERE device_id=? ORDER BY rowid DESC",
+                          (device_id,)).fetchall()
+        events = [dict(json.loads(r["payload"]), received_at=r["received_at"]) for r in rows]
+        return [e for e in events if e["event"] in ("dispensed", "missed", "error")]
+
+    def notification_records(db, device_id):
+        return [dict(r) for r in db.execute("SELECT * FROM notifications WHERE device_id=?", (device_id,))]
+
     @app.get("/health")
     def health():
         return {"ok": True, "schema_version": 2}
@@ -119,13 +161,7 @@ def create_app(db_path=None, token=None):
     def put_config(device_id: Identifier, update: ConfigUpdate):
         with database() as db:
             db.execute("BEGIN IMMEDIATE")
-            current = json.loads(device(db, device_id)["config"])
-            if current["revision"] != update.expected_revision:
-                raise HTTPException(409, "configuration changed; fetch the current revision")
-            result = {"revision": current["revision"] + 1, "timezone": update.timezone,
-                      "schedules": [s.model_dump() for s in update.schedules]}
-            db.execute("UPDATE devices SET config=? WHERE id=?", (json.dumps(result), device_id))
-            return result
+            return save_config(db, device_id, update)
 
     @app.post("/api/v1/devices/{device_id}/config-acks", dependencies=guarded)
     def acknowledge_config(device_id: Identifier, ack: ConfigAck):
@@ -144,10 +180,32 @@ def create_app(db_path=None, token=None):
     def get_status(device_id: Identifier):
         with database() as db:
             row = device(db, device_id)
-            desired = json.loads(row["config"])["revision"]
-            return {"desired_revision": desired, "applied_revision": row["applied_revision"],
-                    "synchronized": desired == row["applied_revision"],
-                    "last_config_result": json.loads(row["config_result"]) if row["config_result"] else None}
+            return config_status(row)
+
+    @app.get("/api/v1/devices/{device_id}/companion", dependencies=guarded)
+    def companion(device_id: Identifier):
+        # One database snapshot keeps labels, revisions and history coherent for the UI.
+        with database() as db:
+            db.execute("BEGIN")
+            row = device(db, device_id)
+            config = json.loads(row["config"])
+            labels = {r["schedule_id"]: r["medication"] for r in db.execute(
+                "SELECT * FROM medication_labels WHERE device_id=?", (device_id,))}
+            schedules = [dict(s, medication=labels.get(s["id"], s["id"])) for s in config["schedules"]]
+            return {"device_id": device_id, "revision": config["revision"], "timezone": config["timezone"],
+                    "schedules": schedules, "status": config_status(row),
+                    "events": history_records(db, device_id), "notifications": notification_records(db, device_id)}
+
+    @app.put("/api/v1/devices/{device_id}/companion", dependencies=guarded)
+    def save_companion(device_id: Identifier, update: CompanionUpdate):
+        # App-only metadata never enters the strict firmware config. Both writes commit together.
+        with database() as db:
+            db.execute("BEGIN IMMEDIATE")
+            result = save_config(db, device_id, update)
+            db.execute("DELETE FROM medication_labels WHERE device_id=?", (device_id,))
+            db.executemany("INSERT INTO medication_labels VALUES(?,?,?)",
+                           [(device_id, s.id, s.medication) for s in update.schedules])
+            return result
 
     @app.post("/api/v1/devices/{device_id}/events", dependencies=guarded)
     def ingest(device_id: Identifier, event: DeviceEvent):
@@ -174,13 +232,10 @@ def create_app(db_path=None, token=None):
     @app.get("/api/v1/devices/{device_id}/history", dependencies=guarded)
     def history(device_id: Identifier):
         with database() as db:
-            rows = db.execute("SELECT payload, received_at FROM events WHERE device_id=? ORDER BY rowid",
-                              (device_id,)).fetchall()
-            return [dict(json.loads(r["payload"]), received_at=r["received_at"]) for r in rows
-                    if json.loads(r["payload"])["event"] in ("dispensed", "missed", "error")]
+            return history_records(db, device_id)
 
     @app.get("/api/v1/devices/{device_id}/notifications", dependencies=guarded)
     def notifications(device_id: Identifier):
         with database() as db:
-            return [dict(r) for r in db.execute("SELECT * FROM notifications WHERE device_id=?", (device_id,))]
+            return notification_records(db, device_id)
     return app

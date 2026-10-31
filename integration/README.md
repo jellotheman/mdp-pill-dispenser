@@ -1,7 +1,16 @@
-# Communication and integration
+# Communication and integration — reference service
 
-A working FastAPI/SQLite reference backend is provided here. Own and extend it, or adapt
-the existing app's backend to integration/INTERFACE.md after inspecting its actual source.
+A small FastAPI/SQLite backend connects the PillPilot app and the Arduino/C++ device contract.
+The app's old memory store has been removed. Medication labels, schedules, device application
+acknowledgements, history and mock notifications use this one database.
+
+For a prepared local demonstration, start with `present.cmd` from the project root;
+see [the presentation guide](../docs/PRESENTATION.md). The launcher opens separate local
+terminals for this service and the dashboard. The existing Wokwi project runs the firmware.
+
+This is a working seam for the integration teammate to expand, not a finished account,
+deployment or SMS system. The canonical routes and ownership boundaries are in
+[INTERFACE.md](INTERFACE.md). FastAPI serves the live OpenAPI schema at `/openapi.json` and `/docs`.
 
 ## Start locally
 
@@ -54,10 +63,11 @@ Use the Wokwi/physical network configuration in firmware/README.md to check that
 
 ## Responsibilities now
 
-- Connect the supplied app to saved/applied status and actual device history.
-- Preserve expected-revision editing and event idempotency.
-- Confirm how medication names/instructions map to stable schedule IDs.
-- Test real device/Wokwi networking and offline reconnect.
+- Maintain the connected app's saved/applied status and controller history.
+- Preserve atomic label/config edits, expected-revision conflicts and event idempotency.
+- Extend metadata through stable schedule IDs without adding fields to firmware config.
+- Test the ESP32/Wokwi Wi-Fi path against a reachable endpoint. The native C++ tests
+  exercise controller behavior; they do not execute ESP32 networking.
 - Add real SMS delivery, provider IDs, failure handling and deduplication.
 - Decide device provisioning and deployment after the existing app is inspected.
 

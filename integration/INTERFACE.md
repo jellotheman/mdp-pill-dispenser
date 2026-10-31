@@ -2,7 +2,7 @@
 
 Implemented by the Arduino firmware and reference service.
 This supersedes the original draft version-1 serial-only format.
-The existing app has not been inspected; adapt its service layer to this contract or agree a revision.
+The PillPilot Next.js companion in app/ now uses this service through a server-side proxy.
 
 ## Conventions
 
@@ -14,6 +14,27 @@ The existing app has not been inspected; adapt its service layer to this contrac
 - This contract does not represent bulk pill counting, arbitrary quantities, weekdays or multiple timezones.
 
 ## Save and synchronize schedules
+
+### Companion metadata
+
+The browser uses GET/PUT `/api/dashboard` on the Next.js server. That server keeps the bearer
+token private and forwards to GET/PUT `/api/v1/devices/{device_id}/companion` here.
+The companion PUT accepts `expected_revision`, `timezone` and `schedules`, with the same
+device schedule fields below plus `medication` (a nonblank label, at most 80 characters).
+Labels and the new device configuration commit in one SQLite transaction. Stale revisions
+return 409 without changing either. The PUT returns the strict device config below.
+
+The companion GET returns `device_id`, `revision`, `timezone`, labelled `schedules`,
+`status` (the same object as /status), newest-first outcome `events` (the same records as
+/history), and mock `notifications`. This is a consistent snapshot from the shared database.
+If a schedule was created directly through /config, its ID is used as its label until the
+app saves a label. Editing config through /config retains existing labels by schedule ID.
+
+Medication labels never enter the firmware payload. The firmware GET /config and all
+event/acknowledgement routes remain unchanged. The original prototype's /api/schedules and
+/api/events endpoints are superseded; the browser cannot fabricate dose outcomes.
+
+### Device configuration
 
 App:
 PUT /api/v1/devices/mdp-demo/config
